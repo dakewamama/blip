@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(node dist/main.js)",
+      "Bash(echo \"pid $!\")",
+      "Bash(pkill -f \"dist/main.js\")",
+      "Bash(curl -s -m 5 -o /dev/null -w \"health:%{http_code}\\\\n\" http://localhost:8000/health)",
+      "Bash(curl -s -m 5 -o /dev/null -w \"old_double_prefix:%{http_code}\\\\n\" \"http://localhost:8000/api/api/wallet/abc/balance\")",
+      "Bash(curl -s -m 5 -o /dev/null -w \"new_wallet_route:%{http_code}\\\\n\" \"http://localhost:8000/api/wallet/not-a-real-address/balance\")",
+      "Bash(curl -s -m 5 \"http://localhost:8000/api/wallet/not-a-real-address/balance\")",
+      "Bash(echo \"started pid $!\")",
+      "Bash(pkill -f \"next build\")",
+      "Bash(pkill -f \"next start\")",
+      "Bash(pkill -f \"npm start\")",
+      "Bash(pkill -f \"concurrently\")",
+      "Bash(npm start *)",
+      "Bash(curl -s --retry 40 --retry-connrefused --retry-delay 1 -m 5 http://localhost:8000/health)",
+      "Bash(curl -s --retry 40 --retry-connrefused --retry-delay 1 -m 15 -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -m 5 -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/health)",
+      "Bash(curl -s -m 5 http://localhost:8000/health)",
+      "Bash(curl -s -m 20 -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/api/ready)",
+      "Bash(curl -s -m 25 -o /dev/null -w \"HTTP %{http_code}\\\\n\" \"http://localhost:3000/api/feed?filter=trending&limit=3\")",
+      "Bash(gh api *)",
+      "Bash(curl -s -m 20 https://raw.githubusercontent.com/dakewamama/onboarding/main/__TRACKED_VAR__)",
+      "Bash(curl -s -m 20 https://raw.githubusercontent.com/dakewamama/onboarding/main/payments/src/__TRACKED_VAR__)",
+      "Bash(npm install *)",
+      "Bash(curl -s -m 10 -X POST http://localhost:3000/api/funding/address -H 'content-type: application/json' -d '{\"owner\":\"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\"}')",
+      "Bash(curl -s -m 10 http://localhost:3000/api/funding/balance?owner=9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM)",
+      "Bash(curl -s -m 10 http://localhost:3000/api/funding/deposits?owner=9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM)",
+      "Bash([ -f \"$f\" ])"
+    ]
+  }
+}

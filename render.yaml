@@ -1,0 +1,50 @@
+# Render Blueprint — provisions both services in one apply.
+# Deploy: Render Dashboard → New + → Blueprint → pick this repo → Apply.
+#
+# Free plans sleep after ~15 min idle; the first request after a nap takes
+# ~40s to wake the API. Upgrade to starter for always-on.
+#
+# The browser only calls same-origin /api (the Next rewrite proxies to the
+# API server-to-server), so no CORS wiring is needed between the two.
+
+services:
+  - type: web
+    name: blip-api
+    runtime: node
+    plan: free
+    buildCommand: npm install --no-audit --no-fund && npm run build --workspace @blip/api
+    startCommand: npm run start:api
+    healthCheckPath: /api/ready
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      # The public Solana RPC rate-limits the safety-score lookups. Put a
+      # private endpoint here (Helius / QuickNode / Triton).
+      - key: SOLANA_RPC_URL
+        sync: false
+      # Only needed for direct (non-proxied) browser calls — set to the web
+      # service URL, e.g. https://blip-web.onrender.com
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SOLANA_COMMITMENT
+        value: confirmed
+
+  - type: web
+    name: blip-web
+    runtime: node
+    plan: free
+    buildCommand: npm install --no-audit --no-fund && npm run build --workspace @blip/web
+    startCommand: npm run start:web
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      # Where the Next server reaches the Nest API. Must match the API
+      # service's public URL — change it if Render appends a suffix to the name.
+      - key: API_ORIGIN
+        value: https://blip-api.onrender.com
