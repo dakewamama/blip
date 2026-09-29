@@ -12,7 +12,9 @@ services:
     name: blip-api
     runtime: node
     plan: free
-    buildCommand: npm install --no-audit --no-fund && npm run build --workspace @blip/api
+    # NODE_ENV=production below makes npm skip devDependencies by default;
+    # --include=dev forces them back in, since @nestjs/cli does the build.
+    buildCommand: npm install --include=dev --no-audit --no-fund && npm run build --workspace @blip/api
     startCommand: npm run start:api
     healthCheckPath: /api/ready
     autoDeploy: true
@@ -26,7 +28,7 @@ services:
       - key: SOLANA_RPC_URL
         sync: false
       # Only needed for direct (non-proxied) browser calls — set to the web
-      # service URL, e.g. https://blip-web.onrender.com
+      # service URL, e.g. https://blip-web-m0r3.onrender.com
       - key: CORS_ORIGIN
         sync: false
       - key: SOLANA_COMMITMENT
@@ -36,7 +38,7 @@ services:
     name: blip-web
     runtime: node
     plan: free
-    buildCommand: npm install --no-audit --no-fund && npm run build --workspace @blip/web
+    buildCommand: npm install --include=dev --no-audit --no-fund && npm run build --workspace @blip/web
     startCommand: npm run start:web
     autoDeploy: true
     envVars:
@@ -44,7 +46,7 @@ services:
         value: production
       - key: NODE_VERSION
         value: "22"
-      # Where the Next server reaches the Nest API. Must match the API
-      # service's public URL — change it if Render appends a suffix to the name.
+      # Where the Next server reaches the Nest API. This is the real allocated
+      # API service URL — keep it in sync if the service is ever renamed.
       - key: API_ORIGIN
-        value: https://blip-api.onrender.com
+        value: https://blip-api-j0d4.onrender.com
