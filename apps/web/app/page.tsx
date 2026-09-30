@@ -19,13 +19,13 @@ const OLD_WAY = [
 ];
 
 const NEW_WAY = [
-  "Email and a passkey — 20 seconds",
+  "Email and you're in",
   "Buy in dollars, fee shown before you tap",
   "Safety read written in plain English",
 ];
 
 const STEPS = [
-  { n: "01", title: "Sign up with an email", body: "A wallet is created and secured with your device passkey. Nothing to write down, no seed phrase homework." },
+  { n: "01", title: "Sign up with an email", body: "One step, no password to invent. Nothing to write down, no seed phrase homework." },
   { n: "02", title: "Pick from a short list", body: "We surface a handful of tokens with real liquidity and a plain-English safety read, instead of ten thousand rows." },
   { n: "03", title: "Press one button", body: "Amount in dollars, fee shown up front, routing handled. Set a take-profit at the same time if you want." },
 ];
@@ -72,14 +72,14 @@ export default async function LandingPage() {
           }}
         >
           <span aria-hidden style={{ width: 7, height: 7, borderRadius: 999, background: "var(--lime)", animation: "blipPulse 1.8s ease-in-out infinite" }} />
-          Open beta · 41,208 traders onboarded
+          Open beta · early days
         </div>
         <h1 className="h1">
           Buy memecoins in<br />three taps, not<br />
           <span className="serif" style={{ fontWeight: 400, letterSpacing: "-.02em", color: "var(--lime)" }}>thirty settings.</span>
         </h1>
         <p style={{ margin: "32px auto 0", maxWidth: 560, fontSize: 19, lineHeight: 1.55, color: "var(--muted)" }}>
-          No slippage sliders. No gas math. No twelve-tab research ritual. blip reads the chain for you and gives you one honest number before you press buy.
+          blip reads the chain for you: the live price, the fee, and the safety read in one number before you press buy. No slippage sliders, no gas math.
         </p>
         <div style={{ display: "flex", gap: 14, justifyContent: "center", marginTop: 44, flexWrap: "wrap" }}>
           <Link href="/auth?mode=signup" className="btn btn-primary" style={{ padding: "19px 38px", fontSize: 16.5, boxShadow: "0 12px 40px -12px rgba(198,242,78,.5)" }}>
@@ -208,7 +208,7 @@ export default async function LandingPage() {
             </p>
             <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: 14, marginTop: 36 }}>
               {[
-                "Scores refresh every block — not on page load",
+                "Scores refresh continuously, not just on page load",
                 "Anything under 40 is hidden unless you ask for it",
                 "Position caps you set once, enforced on every buy",
               ].map((t) => (
@@ -276,8 +276,8 @@ export default async function LandingPage() {
             </div>
             <div style={{ marginTop: 40, paddingTop: 28, borderTop: "1px solid rgba(255,255,255,.08)", display: "flex", gap: 40 }}>
               <div>
-                <div className="mono" style={{ fontSize: 30, color: "var(--lime)" }}>54s</div>
-                <div style={{ fontSize: 13, color: "var(--muted-2)", marginTop: 4 }}>median signup to first buy</div>
+                <div className="mono" style={{ fontSize: 30, color: "var(--lime)" }}>0</div>
+                <div style={{ fontSize: 13, color: "var(--muted-2)", marginTop: 4 }}>seed phrases to lose</div>
               </div>
               <div>
                 <div className="mono" style={{ fontSize: 30, color: "var(--lime)" }}>3</div>
@@ -318,7 +318,7 @@ export default async function LandingPage() {
       {/* cta */}
       <section className="wrap section">
         <div style={{ borderRadius: 40, background: "var(--lime)", color: "var(--lime-ink)", padding: "90px 60px", textAlign: "center" }}>
-          <h2 className="h2" style={{ fontSize: 66, lineHeight: .98 }}>Your first position<br />is 54 seconds away.</h2>
+          <h2 className="h2" style={{ fontSize: 66, lineHeight: .98 }}>Your first position<br />is three taps away.</h2>
           <p style={{ margin: "24px auto 0", maxWidth: 480, fontSize: 18, color: "rgba(11,15,2,.7)", lineHeight: 1.55 }}>
             Free account, non-custodial wallet, and a feed that stays short on purpose.
           </p>

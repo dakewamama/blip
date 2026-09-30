@@ -70,7 +70,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </span>
           <div style={{ minWidth: 0 }}>
             <div className="truncate" style={{ fontSize: 14, fontWeight: 700 }}>{handle}</div>
-            <div className="mono" style={{ fontSize: 12, color: "var(--muted-4)" }}>7xQd…4Kp2</div>
+            <div className="mono" style={{ fontSize: 12, color: "var(--muted-4)" }}>paper wallet</div>
           </div>
         </Link>
       </aside>

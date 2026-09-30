@@ -7,10 +7,10 @@ import { CAP_OPTIONS, FUND_OPTIONS } from "@/lib/data";
 import { useBlip } from "@/lib/store";
 
 const QUOTES = [
-  { q: "Three taps. One honest number. That's the whole product.", sub: "41,208 traders set up in under a minute. Median time from signup to first buy is 54 seconds." },
-  { q: "The code expires in ten minutes. Take your time.", sub: "We never ask for a password, so there's nothing to leak." },
-  { q: "Guardrails first, positions second.", sub: "A per-trade cap is the single highest-return setting in memecoin trading." },
-  { q: "Your wallet exists. Nobody else holds the keys.", sub: "Non-custodial by default. Withdraw to any address, any time." },
+  { q: "Three taps. One honest number. That's the whole product.", sub: "Set up in about a minute. No password to invent, no seed phrase to lose." },
+  { q: "The code expires in ten minutes. Take your time.", sub: "Any six digits work in this build. We never ask for a password, so there's nothing to leak." },
+  { q: "Guardrails first, positions second.", sub: "You set a per-trade cap once. It applies to every buy, everywhere in the app." },
+  { q: "Your balance lives on this device. Nobody else holds the keys.", sub: "Non-custodial. Fills stay simulated until a wallet is connected for signing." },
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -191,7 +191,7 @@ export default function AuthFlow() {
             <div>
               <h1 style={{ margin: 0, fontSize: 38, lineHeight: 1.08, letterSpacing: "-.035em", fontWeight: 800 }}>Fund the wallet.</h1>
               <p style={{ color: "var(--muted)", fontSize: 16, margin: "14px 0 0", lineHeight: 1.6 }}>
-                Wallet <span className="mono" style={{ color: "var(--text)" }}>7xQd…4Kp2</span> is live and secured by your passkey. Add starting balance.
+                Your paper wallet is ready and the balance lives on this device. Add starting balance.
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 30 }}>
                 {FUND_OPTIONS.map((f) => (
@@ -216,7 +216,7 @@ export default function AuthFlow() {
           )}
         </div>
 
-        <p style={{ fontSize: 13, color: "var(--faint)", margin: 0 }}>Secured by device passkey · non-custodial</p>
+        <p style={{ fontSize: 13, color: "var(--faint)", margin: 0 }}>Demo build · balances stay on this device</p>
       </div>
     </div>
   );
