@@ -64,16 +64,6 @@ export default async function LandingPage() {
 
       {/* hero */}
       <section className="wrap" style={{ paddingTop: 140, textAlign: "center" }}>
-        <div
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 10, padding: "8px 16px 8px 12px",
-            borderRadius: 999, border: "1px solid rgba(198,242,78,.28)", background: "rgba(198,242,78,.07)",
-            fontSize: 13, fontWeight: 600, color: "var(--lime)",
-          }}
-        >
-          <span aria-hidden style={{ width: 7, height: 7, borderRadius: 999, background: "var(--lime)", animation: "blipPulse 1.8s ease-in-out infinite" }} />
-          Open beta · early days
-        </div>
         <h1 className="h1">
           Buy memecoins in<br />three taps, not<br />
           <span className="serif" style={{ fontWeight: 400, letterSpacing: "-.02em", color: "var(--lime)" }}>thirty settings.</span>
