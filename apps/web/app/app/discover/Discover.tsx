@@ -7,7 +7,6 @@ import FundCard from "@/components/FundCard";
 import TokenAvatar from "@/components/TokenAvatar";
 import { FILTERS, FILTER_LABELS, SAFETY_FLOOR, scoreColor, verdictOf } from "@/lib/data";
 import { compactUsd, money, percent, priceLabel } from "@/lib/format";
-import { verdictEmoji } from "@/lib/memes";
 import { useBlip } from "@/lib/store";
 import type { FeedFilter, FeedResult } from "@/lib/api";
 
@@ -65,7 +64,15 @@ export default function Discover({
           background: "linear-gradient(90deg, rgba(255,179,92,.10), rgba(255,179,92,.02))",
           border: "1px solid rgba(255,179,92,.32)", borderRadius: 18, padding: "14px 20px",
         }}>
-          <span aria-hidden style={{ fontSize: 18 }}>⚠️</span>
+          <span
+            aria-hidden
+            style={{
+              width: 20, height: 20, borderRadius: 999, flex: "none", display: "grid", placeItems: "center",
+              background: "rgba(255,179,92,.16)", color: "var(--amber, #FFB35C)", fontSize: 12, fontWeight: 800,
+            }}
+          >
+            !
+          </span>
           <span style={{ fontSize: 14.5, color: "var(--text-dim)" }}>
             Balance is running low — <span className="mono">{money(state.cash)}</span> cash. Top up to keep the loop going.
           </span>
@@ -112,7 +119,7 @@ export default function Discover({
 
                 <div style={{ width: 78, textAlign: "right" }}>
                   <div className="mono" style={{ fontSize: 16, color: scoreColor(t.score) }}>
-                    {t.score ?? "—"} <span aria-hidden>{verdictEmoji(t.score)}</span>
+                    {t.score ?? "—"}
                   </div>
                   <div className="label" style={{ fontSize: 11.5, color: "var(--muted-4)", marginTop: 3 }}>
                     {verdictOf(t.score)}{t.score !== null && !t.safetyComplete ? "*" : ""}

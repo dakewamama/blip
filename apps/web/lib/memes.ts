@@ -1,31 +1,31 @@
 /**
- * The meme layer. blip is a memecoin terminal, so the humor lives here in one
- * place and gets placed deliberately — a marquee, toasts, empty states —
- * instead of being sprinkled over market copy where it would erode trust in
- * the numbers. All of it is decoration: nothing here carries data.
+ * The personality layer. blip is a memecoin terminal, so the voice lives here
+ * in one place and gets placed deliberately — a marquee, toasts, empty states
+ * — instead of being sprinkled over market copy where it would erode trust in
+ * the numbers. Text only: no emoji next to market data.
  */
 
 /** Marquee lines. Mixed with live-ish energy but never fake prices. */
 export const MEME_TICKER: string[] = [
-  "gm degens ☀️",
-  "wen moon? the curve decides",
-  "not financial advice — it's a chart",
+  "gm — the feed is live",
+  "the curve decides, not the hype",
+  "not financial advice, just a chart",
   "rug checks run before you even see it",
-  "diamond hands are just exits you postponed 💎",
+  "an exit plan beats diamond hands",
   "buy the dip, not the dubiously audited",
   "one honest number before you press buy",
-  "this is casino-adjacent, act accordingly 🎰",
-  "your per-trade cap is doing the lord's work 🛡️",
+  "manage size like it's casino money",
+  "the per-trade cap is the adult in the room",
   "gm to everyone who checked the safety score",
-  "sell pressure is just someone else's profit",
-  "ser, the liquidity is right there",
+  "sell pressure is just someone else's exit",
+  "check the liquidity before the chart",
 ];
 
 /** Toast lines for a fill. One is picked so repeats don't feel stamped out. */
 export function buyToast(symbol: string, amount: string): string {
   const lines = [
-    `Bought ${amount} of ${symbol} 🚀`,
-    `${symbol} secured. NFA.`,
+    `Bought ${amount} of ${symbol}`,
+    `${symbol} secured`,
     `In on ${symbol} — ${amount} deployed`,
   ];
   return lines[Math.floor(Math.random() * lines.length)];
@@ -33,20 +33,11 @@ export function buyToast(symbol: string, amount: string): string {
 
 export function sellToast(symbol: string, diff: number): string {
   const sign = diff >= 0 ? "+" : "−";
-  const face = diff >= 0 ? "🎉" : "💀";
-  return `Sold ${symbol} · ${sign}${"$" + Math.abs(diff).toFixed(2)} ${face}`;
+  return `Sold ${symbol} · ${sign}${"$" + Math.abs(diff).toFixed(2)}`;
 }
 
 export function tpToast(symbol: string): string {
-  return `Take-profit 2× hit — auto-sold ${symbol} 🚀`;
-}
-
-/** Verdict emoji shown next to a safety score. Null stays blank. */
-export function verdictEmoji(score: number | null): string {
-  if (score === null) return "";
-  if (score >= 75) return "🚀";
-  if (score >= 55) return "👀";
-  return "💀";
+  return `Take-profit 2× hit — auto-sold ${symbol}`;
 }
 
 /** Empty-state lines, keyed by screen so each gets one wink, not three. */
