@@ -1,8 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { SolanaService } from '../common/solana.service';
 import { PricesService } from '../common/prices.service';
-import { UpstreamService } from '../common/upstream.service';
-import { normalizeToken } from '../common/normalize';
+import { MarketService } from '../common/market.service';
 import { quoteSell } from '../common/curve';
 
 export interface PortfolioPosition {
@@ -41,7 +40,7 @@ export class PortfolioService {
   constructor(
     private readonly solana: SolanaService,
     private readonly prices: PricesService,
-    private readonly upstream: UpstreamService,
+    private readonly market: MarketService,
   ) {}
 
   async getPortfolio(address: string): Promise<Portfolio> {
@@ -58,60 +57,53 @@ export class PortfolioService {
     const positions: PortfolioPosition[] = [];
     const unpriced: { mint: string; amount: number }[] = [];
 
-    // Bounded concurrency — a wallet with 200 dust accounts should not fan out 200 requests.
-    const queue = [...accounts];
-    const worker = async () => {
-      while (queue.length) {
-        const account = queue.shift();
-        if (!account) break;
-        try {
-          const raw = await this.upstream.get<any>(`/coins/${account.mint}`);
-          if (!raw?.mint) {
-            unpriced.push({ mint: account.mint, amount: account.amount });
-            continue;
-          }
+    // One batched curve read for the whole wallet, however many accounts it has.
+    const tokens = await this.market.tokens(accounts.map((a) => a.mint)).catch(() => new Map());
 
-          const token = normalizeToken(raw);
-
-          // Value the position by what the curve would actually pay for it,
-          // not by amount × spot — those diverge badly on thin liquidity.
-          let exitValueSol = account.amount * token.priceSol;
-          let priceImpact = 0;
-          try {
-            const quote = quoteSell(
-              {
-                virtualSolReserves: token.virtualSolReserves,
-                virtualTokenReserves: token.virtualTokenReserves,
-                baseDecimals: token.baseDecimals,
-              },
-              account.amount,
-            );
-            exitValueSol = quote.amountOut;
-            priceImpact = quote.priceImpact;
-          } catch {
-            // Curve data missing (usually a graduated token) — spot mark stands.
-          }
-
-          positions.push({
-            mint: token.mint,
-            name: token.name,
-            symbol: token.symbol,
-            imageUri: token.imageUri,
-            amount: account.amount,
-            priceSol: token.priceSol,
-            exitValueSol,
-            exitValueUsd: exitValueSol * solPrice.price,
-            markValueUsd: account.amount * token.priceSol * solPrice.price,
-            priceImpactOnExit: priceImpact,
-            graduated: token.complete,
-          });
-        } catch {
+    for (const account of accounts) {
+      try {
+        const token = tokens.get(account.mint);
+        if (!token) {
           unpriced.push({ mint: account.mint, amount: account.amount });
+          continue;
         }
-      }
-    };
 
-    await Promise.all(Array.from({ length: Math.min(5, accounts.length || 1) }, worker));
+        // Value the position by what the curve would actually pay for it,
+        // not by amount × spot — those diverge badly on thin liquidity.
+        let exitValueSol = account.amount * token.priceSol;
+        let priceImpact = 0;
+        try {
+          const quote = quoteSell(
+            {
+              virtualSolReserves: token.virtualSolReserves,
+              virtualTokenReserves: token.virtualTokenReserves,
+              baseDecimals: token.baseDecimals,
+            },
+            account.amount,
+          );
+          exitValueSol = quote.amountOut;
+          priceImpact = quote.priceImpact;
+        } catch {
+          // Curve data missing (usually a graduated token) — spot mark stands.
+        }
+
+        positions.push({
+          mint: token.mint,
+          name: token.name,
+          symbol: token.symbol,
+          imageUri: token.imageUri,
+          amount: account.amount,
+          priceSol: token.priceSol,
+          exitValueSol,
+          exitValueUsd: exitValueSol * solPrice.price,
+          markValueUsd: account.amount * token.priceSol * solPrice.price,
+          priceImpactOnExit: priceImpact,
+          graduated: token.complete,
+        });
+      } catch {
+        unpriced.push({ mint: account.mint, amount: account.amount });
+      }
+    }
 
     positions.sort((a, b) => b.exitValueUsd - a.exitValueUsd);
 

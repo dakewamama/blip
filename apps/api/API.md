@@ -4,13 +4,26 @@ Base path is `/api`. `/health` sits outside the prefix for load balancers.
 
 One API serves every branded front end (blip, flick, kite). Each request names its brand in `x-blip-tenant`; unknown brands are a 400 and a missing header means `blip`. Market data is shared; custody is separate per brand.
 
+## Where market data comes from
+
+pump.fun's read API (`frontend-api*.pump.fun`) now answers servers with a Cloudflare bot challenge. That is a deliberate block, and this API does not try to get around it. Instead (`common/market.service.ts`):
+
+| Data | Source |
+| --- | --- |
+| Which tokens exist: trending (24h volume), newest, search; names, art, launch time | GeckoTerminal's public API, `pump-fun` dex. Cached 60s and served stale if it rate-limits |
+| Reserves, price, market cap, liquidity, graduation, creator | each token's bonding-curve account, read through `SOLANA_RPC_URL` in one batched call per list. Quotes read it fresh |
+| Name and symbol of a mint discovery hasn't listed (e.g. in a wallet) | on-chain metadata: Token-2022 extension, or Metaplex |
+| Price history | GeckoTerminal OHLCV, using the curve account as the pool id |
+
+Only SOL-quoted curves are listed. pump.fun also runs curves quoted in other tokens, and blip's SOL quotes and trades can't price those. "Featured" (pump.fun's old king-of-the-hill) is the live curves nearest graduation. The legacy `/api/tokens/*` passthrough still calls pump.fun directly and is down with it.
+
 ## What changed and why
 
 Four bugs were found by reading the live upstream payload rather than the type definition:
 
 | Bug | Effect | Fix |
 | --- | --- | --- |
-| `frontend-api.pump.fun` returns Cloudflare 1016 but was hardcoded as primary | ~8s wasted on every request before reaching a working mirror | `UpstreamService` leads with v3 and remembers the last host that worked |
+| `frontend-api.pump.fun` returns Cloudflare 1016 but was hardcoded as primary | ~8s wasted on every request before reaching a working mirror | `UpstreamService` leads with v3 and remembers the last host that worked. Since superseded: every mirror is now bot-challenged, see above |
 | Payload sends `market_cap_usd`, code read `usd_market_cap` | Every market-cap sum and sort evaluated to 0 — `getMarketStats` always returned zero, search "sorted by market cap" did nothing | `normalizeToken()` accepts either spelling |
 | `created_timestamp` is milliseconds, compared against a seconds cutoff | Every token counted as created in the last 24h | timestamps normalised to ms at the boundary |
 | Wallet read only the legacy Token program | pump.fun mints under Token-2022 were invisible in balances | both programs queried and merged |
@@ -108,7 +121,7 @@ Positions are valued at what the curve would actually pay to exit, not `amount �
 
 ```
 GET /health      liveness, no external calls
-GET /api/ready   readiness, actually reaches pump.fun and the RPC
+GET /api/ready   readiness: market data (GeckoTerminal + chain) and the RPC
 ```
 
 ## Notes
@@ -116,4 +129,5 @@ GET /api/ready   readiness, actually reaches pump.fun and the RPC
 - SOL price never falls back to an invented number. If every source fails, `price: 0` and `solPriceStale: true` — render SOL amounts rather than a fictional dollar value.
 - Throttled at 120 req/min per IP.
 - `ValidationPipe` runs with `forbidNonWhitelisted`, so unknown body fields are a 400.
-- Tests: `npm test` covers the transaction guard, tenant resolution, custody config and amount maths. There is also a `/health` e2e test. Signing and broadcasting against Privy and mainnet are not covered by automated tests.
+- GeckoTerminal's free tier allows a few dozen calls a minute per server. Lists cost at most 3 calls a minute, a token page 1–2. The caches above keep normal traffic well inside that, even with all three front ends sharing the API.
+- Tests: `npm test` covers the transaction guard, tenant resolution, custody config, amount maths, and the curve, metadata and GeckoTerminal decoders. There is also a `/health` e2e test. Signing and broadcasting against Privy and mainnet are not covered by automated tests.

@@ -1,11 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
-import { UpstreamService } from './common/upstream.service';
+import { MarketService } from './common/market.service';
 import { SolanaService } from './common/solana.service';
 
 @Controller()
 export class AppController {
   constructor(
-    private readonly upstream: UpstreamService,
+    private readonly market: MarketService,
     private readonly solana: SolanaService,
   ) {}
 
@@ -18,18 +18,15 @@ export class AppController {
   /** Readiness — actually reaches the dependencies. */
   @Get('ready')
   async ready() {
-    const results = await Promise.allSettled([
-      this.upstream.get('/coins', { limit: 1 }, 5000),
-      this.solana.connection.getSlot(),
-    ]);
+    const [market, slot] = await Promise.allSettled([this.market.healthy(), this.solana.connection.getSlot()]);
 
-    const pumpFun = results[0].status === 'fulfilled';
-    const rpc = results[1].status === 'fulfilled';
+    const marketData = market.status === 'fulfilled' && market.value;
+    const rpc = slot.status === 'fulfilled';
 
     return {
-      status: pumpFun && rpc ? 'ok' : 'degraded',
+      status: marketData && rpc ? 'ok' : 'degraded',
       dependencies: {
-        pumpFun: pumpFun ? `ok (${this.upstream.activeHost})` : 'unreachable',
+        marketData: marketData ? 'ok (geckoterminal + chain)' : 'unreachable',
         solanaRpc: rpc ? 'ok' : 'unreachable',
       },
       timestamp: new Date().toISOString(),

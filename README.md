@@ -67,8 +67,8 @@ Verified:
 | --- | --- |
 | `PORT`, `HOST` | defaults 8000 / 0.0.0.0 |
 | `CORS_ORIGIN` | only for direct browser callers; usually empty |
-| `SOLANA_RPC_URL` | **use a private endpoint.** The public one rate-limits `getTokenLargestAccounts` within a few requests and every safety score comes back `complete: false` |
-| `PUMP_API_BASES` | optional override of the pump.fun mirror list |
+| `SOLANA_RPC_URL` | **use a private endpoint.** Prices are read from the chain now, so this carries the feed too. The public endpoint rate-limits within a few requests: safety scores come back `complete: false`, and under load a list can briefly fail to price |
+| `PUMP_API_BASES` | pump.fun mirrors for the legacy `/api/tokens` passthrough only. The feed no longer uses pump.fun's API |
 | `TENANTS` | brands served, default `blip`; e.g. `blip,flick,kite` |
 | `PRIVY_APP_ID`, `PRIVY_APP_SECRET` | turn custody on. Per-brand override: `PRIVY_APP_ID_FLICK` etc. |
 | `PRIVY_AUTHORIZATION_KEY` | optional P-256 key that owns every wallet; back it up |
@@ -86,7 +86,7 @@ Verified:
 
 ## What is real
 
-Always real, from the chain: the feed, safety scores, SOL price, market caps, liquidity, bonding-curve quotes (fee, price impact, slippage floor), OHLCV history, and wallet balances.
+Always real: prices, market caps, liquidity, graduation, bonding-curve quotes (fee, price impact, slippage floor), safety scores and wallet balances all come from the chain. Which tokens appear (trending, new, search), their names and art, and OHLCV history come from GeckoTerminal's public API. pump.fun's own read API now blocks servers with a bot challenge, so it is not used; see `apps/api/API.md`.
 
 Custodial builds: balances, deposits, withdrawals and, with live trading switched on, buys and sells all happen on-chain from the held wallet. Card deposits, referral payouts and coaching payments are not integrated yet; the app says so rather than simulating them.
 

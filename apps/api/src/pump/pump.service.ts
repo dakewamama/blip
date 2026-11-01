@@ -1,9 +1,8 @@
 // src/pump/pump.service.ts
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { SolanaService } from '../common/solana.service';
-import { UpstreamService } from '../common/upstream.service';
+import { MarketService } from '../common/market.service';
 import { PricesService } from '../common/prices.service';
-import { normalizeToken } from '../common/normalize';
 import { Quote, quoteBuy, quoteSell } from '../common/curve';
 import { CreateTokenDto } from './dto/create-token.dto';
 import { BuyTokenDto } from './dto/buy-token.dto';
@@ -26,7 +25,7 @@ export class PumpService {
   
   constructor(
     private readonly solana: SolanaService,
-    private readonly upstream: UpstreamService,
+    private readonly market: MarketService,
     private readonly prices: PricesService,
   ) {}
 
@@ -203,9 +202,9 @@ export class PumpService {
 
   async getTokenInfo(mintAddress: string): Promise<TokenResponse> {
     try {
-      const raw = await this.upstream.get<any>(`/coins/${mintAddress}`);
-      if (!raw?.mint) throw new NotFoundException('Token not found');
-      return { success: true, data: raw };
+      const token = await this.market.token(mintAddress);
+      if (!token) throw new NotFoundException('Token not found');
+      return { success: true, data: token };
     } catch (error: any) {
       this.logger.error(`Failed to get token info for ${mintAddress}: ${error.message}`);
       return { success: false, error: error.message || 'Failed to get token info' };
@@ -229,10 +228,10 @@ export class PumpService {
         throw new BadRequestException('amount must be a positive number');
       }
 
-      const raw = await this.upstream.get<any>(`/coins/${mint}`);
-      if (!raw?.mint) throw new NotFoundException(`No pump.fun token for mint ${mint}`);
+      // Read from the bonding-curve account at quote time, so the price is the chain's, not a cache's.
+      const token = await this.market.token(mint);
+      if (!token) throw new NotFoundException(`No pump.fun token for mint ${mint}`);
 
-      const token = normalizeToken(raw);
       if (token.complete) {
         // Past graduation the bonding curve no longer prices the token.
         throw new BadRequestException(
@@ -300,12 +299,7 @@ export class PumpService {
   async healthCheck() {
     const checks: Record<string, string> = {};
 
-    try {
-      await this.upstream.get('/coins', { limit: 1 }, 5000);
-      checks.pumpFun = `connected (${this.upstream.activeHost})`;
-    } catch {
-      checks.pumpFun = 'unreachable';
-    }
+    checks.marketData = (await this.market.healthy()) ? 'connected (geckoterminal + chain)' : 'unreachable';
 
     try {
       await this.solana.connection.getSlot();
@@ -317,7 +311,7 @@ export class PumpService {
     const price = this.prices.getSolUsd();
     checks.solPrice = price.price > 0 ? `$${price.price.toFixed(2)}${price.stale ? ' (stale)' : ''}` : 'unavailable';
 
-    const healthy = checks.pumpFun.startsWith('connected') && checks.rpc === 'connected';
+    const healthy = checks.marketData.startsWith('connected') && checks.rpc === 'connected';
 
     return {
       status: healthy ? 'ok' : 'degraded',

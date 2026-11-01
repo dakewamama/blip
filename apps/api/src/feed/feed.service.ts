@@ -1,9 +1,9 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { UpstreamService } from '../common/upstream.service';
+import { MarketService } from '../common/market.service';
 import { PricesService } from '../common/prices.service';
 import { SafetyService, SafetyReport } from '../safety/safety.service';
 import { TtlCache } from '../common/cache';
-import { NormalizedToken, ageLabel, normalizeToken } from '../common/normalize';
+import { NormalizedToken, ageLabel } from '../common/normalize';
 import { curveProgress } from '../common/curve';
 import axios from 'axios';
 
@@ -66,7 +66,7 @@ export class FeedService {
   private readonly poolCache = new TtlCache<string | null>(30 * 60_000, 500);
 
   constructor(
-    private readonly upstream: UpstreamService,
+    private readonly market: MarketService,
     private readonly prices: PricesService,
     private readonly safety: SafetyService,
   ) {}
@@ -74,18 +74,14 @@ export class FeedService {
   private async fetchList(filter: FeedFilter, limit: number, offset: number): Promise<NormalizedToken[]> {
     const key = `${filter}:${limit}:${offset}`;
     return this.listCache.wrap(key, async () => {
-      const sort = filter === 'new' ? 'created_timestamp' : 'market_cap';
-      const path = filter === 'featured' ? '/coins/king-of-the-hill' : '/coins';
-
-      const raw = await this.upstream.get<any[]>(path, {
-        offset,
-        limit,
-        sort,
-        order: 'DESC',
-        includeNsfw: false,
-      });
-
-      return (Array.isArray(raw) ? raw : []).map(normalizeToken).filter((t) => t.mint);
+      const tokens = await this.market.list(filter === 'new' ? 'new' : 'active', limit, offset);
+      // "Featured" was pump.fun's king-of-the-hill: the live tokens nearest graduation.
+      if (filter === 'featured') {
+        return tokens
+          .filter((t) => !t.complete)
+          .sort((a, b) => curveProgress(b.realSolReserves) - curveProgress(a.realSolReserves));
+      }
+      return tokens;
     });
   }
 
@@ -139,10 +135,9 @@ export class FeedService {
   }
 
   async getToken(mint: string): Promise<{ token: FeedToken; safety: SafetyReport | null; raw: NormalizedToken }> {
-    const raw = await this.upstream.get<any>(`/coins/${mint}`);
-    if (!raw || !raw.mint) throw new NotFoundException(`No pump.fun token for mint ${mint}`);
+    const token = await this.market.token(mint);
+    if (!token) throw new NotFoundException(`No pump.fun token for mint ${mint}`);
 
-    const token = normalizeToken(raw);
     const [solPrice, safety] = await Promise.all([
       Promise.resolve(this.prices.getSolUsd()),
       this.safety.getReport(token).catch((error) => {
@@ -170,22 +165,7 @@ export class FeedService {
       }
     }
 
-    const pages = await Promise.all(
-      [0, 1, 2].map((page) =>
-        this.fetchList('trending', 100, page * 100).catch(() => [] as NormalizedToken[]),
-      ),
-    );
-
-    const unique = Array.from(new Map(pages.flat().map((t) => [t.mint, t])).values());
-    const matches = unique
-      .filter(
-        (t) =>
-          t.symbol.toLowerCase().includes(term) ||
-          t.name.toLowerCase().includes(term) ||
-          t.mint.toLowerCase().startsWith(term),
-      )
-      .sort((a, b) => b.marketCapUsd - a.marketCapUsd)
-      .slice(0, limit);
+    const matches = (await this.market.search(term, limit)).sort((a, b) => b.marketCapUsd - a.marketCapUsd);
 
     const [solPrice, reports] = await Promise.all([
       Promise.resolve(this.prices.getSolUsd()),
@@ -204,9 +184,9 @@ export class FeedService {
   /**
    * Real price history for the detail chart.
    *
-   * pump.fun's v3 mirror has no trades endpoint (the old `/trades/all/:mint`
-   * path 404s, which also means the legacy TokensService trade methods return
-   * nothing), so history comes from GeckoTerminal's OHLCV for the token's pool.
+   * pump.fun has no usable trades endpoint for a server (its read API is
+   * behind a bot challenge), so history comes from GeckoTerminal's OHLCV for
+   * the token's pool.
    * This is the only honest source available — the previous frontend drew a
    * seeded random walk that looked like history but was not.
    */
@@ -246,9 +226,14 @@ export class FeedService {
     });
   }
 
-  /** GeckoTerminal indexes by its own pool id, not pump.fun's pool_address. */
+  /**
+   * On the curve, GeckoTerminal's pool id is the bonding-curve account, which
+   * we can derive; a graduated token's AMM pool has to be looked up.
+   */
   private async resolvePool(mint: string): Promise<string | null> {
     return this.poolCache.wrap(mint, async () => {
+      const curve = await this.market.curvePool(mint).catch(() => null);
+      if (curve) return curve;
       const { data } = await axios.get(
         `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}/pools`,
         { timeout: 8000 },
