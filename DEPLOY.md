@@ -5,8 +5,10 @@ One API on Render, three front ends on Vercel, all built from this repo.
 | Where | Service | What it is |
 | --- | --- | --- |
 | Render | `blip-api` → https://blip-api-j0d4.onrender.com | NestJS API, health at `/api/ready` |
-| Render | `blip-web` | the blip front end, from the same Blueprint (optional once Vercel serves blip) |
-| Vercel | `blip-web` · `flick-web` · `kite-web` | `apps/web` built three times with `NEXT_PUBLIC_BRAND` = blip · flick · kite |
+| Render | `blip-web` | the blip front end, from the same Blueprint — optional now that Vercel serves blip |
+| Vercel | `blip-web` → https://blip-web-seven.vercel.app | `apps/web` with `NEXT_PUBLIC_BRAND=blip` |
+| Vercel | `flick-web` → https://flick-web-fawn.vercel.app | `apps/web` with `NEXT_PUBLIC_BRAND=flick` |
+| Vercel | `kite-web` → https://kite-web-green.vercel.app | `apps/web` with `NEXT_PUBLIC_BRAND=kite` |
 
 Browsers only call same-origin `/api`, which each front end's Next server forwards to `API_ORIGIN`. So no CORS setup is needed between Vercel and Render.
 
@@ -54,7 +56,7 @@ Until this is done, every front end runs as a labelled demo build with simulated
 
 1. **Privy apps.** In [dashboard.privy.io](https://dashboard.privy.io), create one app per brand. A shared app works too, but login emails then carry one brand's name.
    - Enable Email, and optionally Google and Apple.
-   - Under allowed origins, add each front end's production URL.
+   - Under allowed origins, add each front end's production URL (above).
 2. **API (Render).**
    - Set `PRIVY_APP_ID` and `PRIVY_APP_SECRET`.
    - For separate apps, add `PRIVY_APP_ID_FLICK` / `PRIVY_APP_SECRET_FLICK` and the same for `_KITE`. Unsuffixed values cover blip and any brand without its own.
