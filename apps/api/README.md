@@ -1,22 +1,22 @@
-# trigger2nest-backend
+# blip API
 
-NestJS API for the Pump.fun controller. Runs standalone on port 8000.
+NestJS API behind every blip-family front end: market data, safety scoring, curve quotes, and the custodial wallets the app holds for its users.
 
 ```bash
-cp .env.example .env
-npm install
-npm run start:dev
+cp .env.example .env     # or `npm run setup` from the repo root
+npm run start:dev        # http://localhost:8000/api
+npm test                 # unit tests
 ```
 
-Routes:
-- `pump/*` — pump.fun operations
-- `tokens/*` — token listing and detail
-- `api/trading/*` — buy/sell
-- `api/wallet/*` — balances and wallet state
-- `health` — status check
+| Module | Routes | What it does |
+| --- | --- | --- |
+| `feed` | `/api/feed*` | discover list and token detail, safety-scored and priced in USD |
+| `pump` | `/api/pump/*` | curve quotes; unsigned PumpPortal transactions and `/submit` for self-custody wallets |
+| `custody` | `/api/custody/*` | Privy-held wallet per user per brand: account, trade, withdraw |
+| `portfolio` | `/api/portfolio/:address` | any wallet's holdings, valued at realistic exit |
+| `funding` | `/api/funding/*` | demo-mode USDC watch on a user-owned wallet |
+| `wallet` | `/api/wallet/:address/*` | raw SOL / token balances |
+| `tokens` | `/api/tokens/*` | raw pump.fun passthrough (legacy surface) |
+| — | `/health`, `/api/ready` | liveness / readiness |
 
-Config (`.env`): `PORT` (default 8000), `CORS_ORIGIN` (default `http://localhost:5173`),
-`SOLANA_RPC_URL`, `SOLANA_NETWORK`.
-
-The frontend is a separate package and talks to this service over HTTP only —
-no shared source, no imports across the boundary.
+Every endpoint and the custody safety checks are documented in `API.md`. All configuration is in `.env.example`.

@@ -1,7 +1,7 @@
 import { api, ApiError, type FeedFilter, type FeedResult } from "@/lib/api";
 import Discover from "./Discover";
 
-export const metadata = { title: "blip \u2014 discover" };
+export const metadata = { title: "discover" };
 export const dynamic = "force-dynamic";
 
 const FILTERS: FeedFilter[] = ["trending", "new", "gainers", "safest"];

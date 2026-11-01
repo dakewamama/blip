@@ -90,41 +90,26 @@ export class PumpService {
         };
       }
 
-      // Use PumpPortal for real trading
-      const tradeData = {
+      const transaction = await this.buildTradeTransaction({
         publicKey: buyTokenDto.publicKey,
         action: 'buy',
         mint: buyTokenDto.mint,
-        denominatedInSol: true, // Amount is in SOL
-        amount: buyTokenDto.solAmount, // Amount of SOL to spend
-        slippage: buyTokenDto.slippage || 1, // 1% slippage
-        priorityFee: buyTokenDto.priorityFee || 0.00001,
-        pool: 'pump' // Trading on pump.fun
-      };
-
-      const response = await axios.post(`${this.PUMPPORTAL_BASE}/trade-local`, tradeData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
+        amount: buyTokenDto.solAmount, // SOL to spend
+        denominatedInSol: true,
+        slippagePct: buyTokenDto.slippage || 1,
+        priorityFeeSol: buyTokenDto.priorityFee || 0.00001,
       });
 
-      if (response.data) {
-        this.logger.log('Trade transaction prepared successfully');
-        
-        return {
-          success: true,
-          data: {
-            transaction: response.data, // Serialized transaction to sign
-            mint: buyTokenDto.mint,
-            amount: buyTokenDto.amount,
-            solAmount: buyTokenDto.solAmount,
-            action: 'buy'
-          }
-        };
-      } else {
-        throw new Error('No transaction data received');
-      }
+      return {
+        success: true,
+        data: {
+          transaction, // base64 VersionedTransaction, unsigned
+          mint: buyTokenDto.mint,
+          amount: buyTokenDto.amount,
+          solAmount: buyTokenDto.solAmount,
+          action: 'buy'
+        }
+      };
     } catch (error) {
       this.logger.error('Failed to buy token:', error);
       return {
@@ -146,45 +131,73 @@ export class PumpService {
         };
       }
       
-      const tradeData = {
+      const transaction = await this.buildTradeTransaction({
         publicKey: sellTokenDto.publicKey,
         action: 'sell',
         mint: sellTokenDto.mint,
-        denominatedInSol: false, // Amount is in tokens
-        amount: sellTokenDto.amount, // Number of tokens to sell (or "100%" for all)
-        slippage: sellTokenDto.slippage || 1,
-        priorityFee: sellTokenDto.priorityFee || 0.00001,
-        pool: 'pump'
-      };
-
-      const response = await axios.post(`${this.PUMPPORTAL_BASE}/trade-local`, tradeData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
+        amount: sellTokenDto.amount, // tokens to sell
+        denominatedInSol: false,
+        slippagePct: sellTokenDto.slippage || 1,
+        priorityFeeSol: sellTokenDto.priorityFee || 0.00001,
       });
 
-      if (response.data) {
-        this.logger.log('Sell transaction prepared successfully');
-        
-        return {
-          success: true,
-          data: {
-            transaction: response.data, // Serialized transaction to sign
-            mint: sellTokenDto.mint,
-            amount: sellTokenDto.amount,
-            action: 'sell'
-          }
-        };
-      } else {
-        throw new Error('No transaction data received');
-      }
+      return {
+        success: true,
+        data: {
+          transaction, // base64 VersionedTransaction, unsigned
+          mint: sellTokenDto.mint,
+          amount: sellTokenDto.amount,
+          action: 'sell'
+        }
+      };
     } catch (error) {
       this.logger.error('Failed to sell token:', error);
       return {
         success: false,
         error: error.response?.data?.error || error.message || 'Sell failed'
       };
+    }
+  }
+
+  /**
+   * Ask PumpPortal for an unsigned trade transaction, returned as base64.
+   *
+   * trade-local answers with the raw serialized VersionedTransaction bytes, not
+   * JSON. Read as text (axios's default) those bytes were mangled, so nothing a
+   * wallet signed from the old response could ever have landed.
+   */
+  async buildTradeTransaction(params: {
+    publicKey: string;
+    action: 'buy' | 'sell';
+    mint: string;
+    /** SOL when denominatedInSol, else tokens — or "100%" to sell everything. */
+    amount: number | string;
+    denominatedInSol: boolean;
+    slippagePct: number;
+    priorityFeeSol: number;
+  }): Promise<string> {
+    try {
+      const response = await axios.post(
+        `${this.PUMPPORTAL_BASE}/trade-local`,
+        {
+          publicKey: params.publicKey,
+          action: params.action,
+          mint: params.mint,
+          amount: params.amount,
+          denominatedInSol: params.denominatedInSol ? 'true' : 'false',
+          slippage: params.slippagePct,
+          priorityFee: params.priorityFeeSol,
+          pool: 'pump',
+        },
+        { headers: { 'Content-Type': 'application/json' }, responseType: 'arraybuffer', timeout: 30000 },
+      );
+      const bytes = Buffer.from(response.data);
+      if (bytes.length === 0) throw new Error('PumpPortal returned an empty transaction');
+      return bytes.toString('base64');
+    } catch (error: any) {
+      // Error bodies arrive as bytes too, given responseType above.
+      const body = error.response?.data ? Buffer.from(error.response.data).toString('utf8') : '';
+      throw new Error(`PumpPortal could not build the ${params.action}: ${body || error.message}`);
     }
   }
 

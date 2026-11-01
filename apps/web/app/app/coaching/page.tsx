@@ -1,3 +1,3 @@
 import Coaching from "./Coaching";
-export const metadata = { title: "blip \u2014 coaching" };
+export const metadata = { title: "coaching" };
 export default function Page() { return <Coaching />; }

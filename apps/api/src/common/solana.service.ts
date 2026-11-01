@@ -10,6 +10,8 @@ export const TOKEN_2022_PROGRAM = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PH
 export interface ParsedTokenAccount {
   mint: string;
   amount: number;
+  /** Integer base units as reported by the RPC — exact, unlike `amount`. */
+  rawAmount: string;
   decimals: number;
   program: 'token' | 'token-2022';
 }
@@ -83,6 +85,7 @@ export class SolanaService {
         out.push({
           mint: info.mint,
           amount,
+          rawAmount: String(info.tokenAmount?.amount ?? '0'),
           decimals: Number(info.tokenAmount?.decimals ?? 0),
           program,
         });

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { money } from "@/lib/format";
 import { REFERRAL_REWARD_USD, referralCode, useBlip, type Referral } from "@/lib/store";
 import { MEME_EMPTY } from "@/lib/memes";
+import { brand } from "@/lib/brand";
+import { useCustody } from "@/lib/custody";
 
 /**
  * The partner program. Referrals are the growth engine of the business:
@@ -34,7 +36,7 @@ const TIERS: Tier[] = [
 const SHARE_KIT = [
   {
     label: "X / Twitter",
-    text: "stop pasting contract addresses from group chats. blip scores every memecoin before you see it and shows one honest number before you buy. 60-second setup:\n",
+    text: `stop pasting contract addresses from group chats. ${brand.name} scores every memecoin before you see it and shows one honest number before you buy. 60-second setup:\n`,
   },
   {
     label: "Telegram",
@@ -42,7 +44,7 @@ const SHARE_KIT = [
   },
   {
     label: "Discord",
-    text: "if you're trading pump.fun manually you're doing 5 tabs of work for one tap. blip does the rug check + quote in one screen. sign up here and we both get $10 when you fund:\n",
+    text: `if you're trading pump.fun manually you're doing 5 tabs of work for one tap. ${brand.name} does the rug check + quote in one screen. sign up here and we both get $10 when you fund:\n`,
   },
 ];
 
@@ -64,6 +66,7 @@ function tierFor(fundedCount: number): { current: Tier; next: Tier | null } {
 
 export default function Referrals() {
   const { state, showToast, seedReferrals } = useBlip();
+  const custodial = useCustody().enabled;
 
   const code = referralCode(state.handle);
   const [origin, setOrigin] = useState("");
@@ -96,7 +99,7 @@ export default function Referrals() {
   const share = async () => {
     if (navigator.share && link) {
       try {
-        await navigator.share({ title: "blip partners", text: "Trade memecoins with one honest number before you buy. Join with my link — we both get $10 when you fund:", url: link });
+        await navigator.share({ title: `${brand.name} partners`, text: "Trade memecoins with one honest number before you buy. Join with my link — we both get $10 when you fund:", url: link });
         return;
       } catch {
         /* user dismissed the sheet */
@@ -107,11 +110,11 @@ export default function Referrals() {
 
   return (
     <div>
-      <p className="eyebrow" style={{ margin: 0 }}>blip partner program</p>
+      <p className="eyebrow" style={{ margin: 0 }}>{brand.name} partner program</p>
       <h1 className="h3" style={{ marginTop: 10 }}>You bring the traders.<br />We pay you for them.</h1>
       <p style={{ color: "var(--muted)", fontSize: 17, margin: "14px 0 0", maxWidth: 640, lineHeight: 1.6 }}>
         This isn&apos;t a badge — it&apos;s a revenue share. {money(REFERRAL_REWARD_USD, 0)} every time someone
-        funds through your link, plus <strong style={{ color: "var(--text)" }}>{Math.round(tier.feeShare * 100)}% of blip&apos;s
+        funds through your link, plus <strong style={{ color: "var(--text)" }}>{Math.round(tier.feeShare * 100)}% of {brand.name}&apos;s
         1% trading fee</strong> on everything they trade for their first year. Bring more, climb tiers, earn more.
       </p>
 
@@ -209,10 +212,10 @@ export default function Referrals() {
           {TIERS.map((t) => {
             const on = t.id === tier.id;
             return (
-              <div key={t.id} className="panel-sm" style={{ background: on ? "linear-gradient(180deg, rgba(198,242,78,.09), rgba(198,242,78,.02))" : "var(--surface)", border: `1px solid ${on ? "rgba(198,242,78,.42)" : "var(--hair)"}`, borderRadius: 24, padding: 26 }}>
+              <div key={t.id} className="panel-sm" style={{ background: on ? "linear-gradient(180deg, var(--lime-wash), transparent)" : "var(--surface)", border: `1px solid ${on ? "var(--lime-line)" : "var(--hair)"}`, borderRadius: 24, padding: 26 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <p className="label" style={{ margin: 0, color: on ? "var(--lime)" : undefined }}>{t.name}</p>
-                  {on && <span style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--lime)", background: "rgba(198,242,78,.16)", padding: "4px 10px", borderRadius: 999 }}>you</span>}
+                  {on && <span style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--lime)", background: "var(--lime-soft)", padding: "4px 10px", borderRadius: 999 }}>you</span>}
                 </div>
                 <p style={{ fontSize: 13, color: "var(--muted-2)", margin: "8px 0 0" }}>
                   {t.fundedNeeded === 0 ? "from your first share" : `${t.fundedNeeded}+ funded referrals`}
@@ -232,7 +235,7 @@ export default function Referrals() {
       <section style={{ marginTop: 46 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
           <h2 className="label" style={{ letterSpacing: ".1em", margin: 0 }}>Your recruits</h2>
-          {state.referrals.length === 0 && (
+          {state.referrals.length === 0 && !custodial && (
             <button type="button" className="btn-quiet" style={{ padding: 0, fontSize: 12.5 }}
               onClick={() => seedReferrals(DEMO_REFERRALS)}>
               demo: load sample referrals to see the machine run
@@ -282,8 +285,9 @@ export default function Referrals() {
         </ol>
         <p style={{ color: "var(--muted-4)", fontSize: 13, margin: "16px 0 0", lineHeight: 1.6 }}>
           Rewards credit to your balance on Add funds. Self-referrals and unfunded signups don&apos;t earn.
-          This is a demo build: referral tracking and rewards are simulated on-device — the live
-          program pays the same shape of numbers from real fee revenue.
+          {custodial
+            ? "Payouts from the referral program aren't live yet: sign-ups are tracked, and nothing is credited to your wallet until they are."
+            : "This is a demo build: referral tracking and rewards are simulated on-device — the live program pays the same shape of numbers from real fee revenue."}
         </p>
       </div>
     </div>

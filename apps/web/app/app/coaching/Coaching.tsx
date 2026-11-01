@@ -4,9 +4,12 @@ import { useState } from "react";
 import { COACHES, PLANS } from "@/lib/data";
 import { money } from "@/lib/format";
 import { useBlip } from "@/lib/store";
+import { brand } from "@/lib/brand";
+import { useCustody } from "@/lib/custody";
 
 export default function Coaching() {
   const { state, patch, bookPlan, cancelPlan, showToast } = useBlip();
+  const custodial = useCustody().enabled;
   const [inRoom, setInRoom] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(false);
@@ -20,14 +23,14 @@ export default function Coaching() {
     <div>
       <h1 className="h3">Learn from someone who&apos;s done it.</h1>
       <p style={{ color: "var(--muted)", fontSize: 17, margin: "12px 0 0", maxWidth: 560 }}>
-        Live 1-on-1 sessions on entries, exits and reading a safety score. Paid from your blip balance — no card, cancel any time.
+        Live 1-on-1 sessions on entries, exits and reading a safety score. Paid from your {brand.name} balance — no card, cancel any time.
       </p>
 
       {activePlan && activeCoach ? (
         <div style={{ marginTop: 38, animation: "blipPop .34s cubic-bezier(.2,.8,.2,1) both" }}>
-          <div className="panel" style={{ border: "1px solid rgba(198,242,78,.28)", padding: 34, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 30, alignItems: "center" }}>
+          <div className="panel" style={{ border: "1px solid var(--lime-line)", padding: 34, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 30, alignItems: "center" }}>
             <div>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime)", background: "rgba(198,242,78,.1)", borderRadius: 999, padding: "7px 14px" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime)", background: "var(--lime-soft)", borderRadius: 999, padding: "7px 14px" }}>
                 <span aria-hidden style={{ width: 7, height: 7, borderRadius: 999, background: "var(--lime)" }} />
                 Active
               </span>
@@ -50,7 +53,7 @@ export default function Coaching() {
                     <div style={{ aspectRatio: "4 / 3", borderRadius: 16, background: "var(--surface-alt)", border: "1px solid var(--hair)", display: "grid", placeItems: "center" }}>
                       <span className="avatar" style={{ width: 52, height: 52, background: activeCoach.color, fontSize: 19 }}>{activeCoach.mono}</span>
                     </div>
-                    <div style={{ aspectRatio: "4 / 3", borderRadius: 16, background: "var(--surface-alt)", border: `1px solid ${camOn ? "rgba(198,242,78,.4)" : "var(--hair)"}`, display: "grid", placeItems: "center" }}>
+                    <div style={{ aspectRatio: "4 / 3", borderRadius: 16, background: "var(--surface-alt)", border: `1px solid ${camOn ? "var(--lime-line)" : "var(--hair)"}`, display: "grid", placeItems: "center" }}>
                       <span className="mono" style={{ fontSize: 12.5, color: camOn ? "var(--lime)" : "var(--muted-4)" }}>
                         {camOn ? "you" : "camera off"}
                       </span>
@@ -101,13 +104,13 @@ export default function Coaching() {
                   style={{
                     textAlign: "left", cursor: "pointer", color: "var(--text)", transition: ".18s",
                     display: "flex", flexDirection: "column", minHeight: 300, padding: 30, borderRadius: 28,
-                    background: on ? "linear-gradient(180deg, rgba(198,242,78,.09), rgba(198,242,78,.02))" : "var(--surface)",
-                    border: `1px solid ${on ? "rgba(198,242,78,.42)" : "var(--hair)"}`,
+                    background: on ? "linear-gradient(180deg, var(--lime-wash), transparent)" : "var(--surface)",
+                    border: `1px solid ${on ? "var(--lime-line)" : "var(--hair)"}`,
                   }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span className="label" style={{ letterSpacing: ".08em", fontSize: 12.5, color: on ? "var(--lime)" : "var(--muted-3)" }}>{p.tag}</span>
                     {p.popular && (
-                      <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", background: "rgba(198,242,78,.16)", color: "var(--lime)", padding: "5px 10px", borderRadius: 999 }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", background: "var(--lime-soft)", color: "var(--lime)", padding: "5px 10px", borderRadius: 999 }}>
                         Most picked
                       </span>
                     )}
@@ -139,7 +142,7 @@ export default function Coaching() {
                     display: "flex", alignItems: "center", gap: 16, textAlign: "left", cursor: "pointer",
                     color: "var(--text)", padding: 20, borderRadius: 24, transition: ".18s",
                     background: on ? "var(--surface-deep)" : "var(--surface)",
-                    border: `1px solid ${on ? "rgba(198,242,78,.42)" : "var(--hair)"}`,
+                    border: `1px solid ${on ? "var(--lime-line)" : "var(--hair)"}`,
                   }}>
                   <span className="avatar" style={{ width: 46, height: 46, background: c.color, fontSize: 17 }}>{c.mono}</span>
                   <span style={{ minWidth: 0 }}>
@@ -168,8 +171,8 @@ export default function Coaching() {
                 <p className="mono" style={{ fontSize: 26, margin: 0 }}>{money(selectedPlan?.price ?? 0)}</p>
                 <p style={{ fontSize: 12.5, color: "var(--muted-4)", margin: "3px 0 0" }}>from balance {money(state.cash)}</p>
               </div>
-              <button type="button" onClick={bookPlan} className="btn btn-primary" style={{ padding: "18px 34px", fontSize: 16 }}>
-                {state.cash >= (selectedPlan?.price ?? 0) ? "Pay from balance" : "Deposit to book"}
+              <button type="button" onClick={bookPlan} disabled={custodial} className="btn btn-primary" style={{ padding: "18px 34px", fontSize: 16 }}>
+                {custodial ? "Booking opens soon" : state.cash >= (selectedPlan?.price ?? 0) ? "Pay from balance" : "Deposit to book"}
               </button>
             </div>
           </div>

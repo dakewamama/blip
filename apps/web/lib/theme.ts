@@ -12,9 +12,8 @@ export const c = {
   muted4: "#6A6A76",
   muted5: "#5C5C68",
   faint: "#4E4E58",
-  lime: "#C6F24E",
-  limeHi: "#DCFF85",
-  limeInk: "#0B0F02",
+  // No accent here: it is per brand. Use var(--lime) in styles, or brand.accent
+  // from lib/brand.ts where a literal colour is needed.
   green: "#6BE38B",
   amber: "#FFB35C",
   red: "#FF6B6B",

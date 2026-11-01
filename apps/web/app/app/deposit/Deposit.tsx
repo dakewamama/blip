@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { brand } from "@/lib/brand";
+import { useCustody } from "@/lib/custody";
 import { money } from "@/lib/format";
 import { useBlip } from "@/lib/store";
 
@@ -15,10 +17,44 @@ const METHODS: { id: Method; label: string; sub: string; glyph: string }[] = [
   { id: "card", label: "Debit / credit card", sub: "Visa, Mastercard · instant", glyph: "▭" },
   { id: "apple", label: "Apple Pay", sub: "Face ID / Touch ID", glyph: "" },
   { id: "google", label: "Google Pay", sub: "One-tap checkout", glyph: "G" },
-  { id: "crypto", label: "USDC on Solana", sub: "On-chain, non-custodial", glyph: "◎" },
+  { id: "crypto", label: "USDC on Solana", sub: "On-chain, to a wallet you own", glyph: "◎" },
 ];
 
 export default function Deposit() {
+  return useCustody().enabled ? <CustodyDeposit /> : <DemoDeposit />;
+}
+
+/**
+ * A held wallet is funded on-chain. Card rails need a payments provider that
+ * is not integrated yet, so this says so rather than walking a checkout that
+ * cannot charge anyone.
+ */
+function CustodyDeposit() {
+  const { account } = useCustody();
+  return (
+    <div style={{ maxWidth: 620 }}>
+      <h1 className="h3">Deposit</h1>
+      <p style={{ color: "var(--muted)", fontSize: 17, margin: "12px 0 0" }}>
+        Fund your {brand.name} wallet by sending SOL on Solana from any exchange or wallet. It shows up as soon as
+        the transfer confirms.
+      </p>
+      <div className="panel" style={{ marginTop: 30 }}>
+        <p className="label" style={{ margin: 0 }}>Your deposit address · SOL</p>
+        <p className="mono" style={{ fontSize: 14, margin: "12px 0 0", wordBreak: "break-all" }}>
+          {account?.address ?? "Loading…"}
+        </p>
+        <Link href="/app/wallet" className="btn btn-primary btn-block" style={{ marginTop: 20, padding: 16, fontSize: 16 }}>
+          Show QR and balance
+        </Link>
+      </div>
+      <p style={{ fontSize: 13.5, color: "var(--muted-3)", margin: "18px 0 0", lineHeight: 1.6 }}>
+        Card, Apple Pay and Google Pay deposits aren&apos;t available yet.
+      </p>
+    </div>
+  );
+}
+
+function DemoDeposit() {
   const { deposit } = useBlip();
   const router = useRouter();
 
@@ -110,7 +146,7 @@ export default function Deposit() {
                   style={{ display: "flex", alignItems: "center", gap: 14, textAlign: "left", cursor: "pointer",
                     color: "var(--text)", padding: "16px 18px", borderRadius: 16, transition: ".18s",
                     background: on ? "var(--surface-deep)" : "rgba(255,255,255,.03)",
-                    border: `1px solid ${on ? "rgba(198,242,78,.42)" : "var(--hair)"}` }}>
+                    border: `1px solid ${on ? "var(--lime-line)" : "var(--hair)"}` }}>
                   <span className="mono" style={{ width: 34, height: 34, display: "grid", placeItems: "center", borderRadius: 10, background: "var(--surface-alt)", fontSize: 16, flex: "none" }}>{m.glyph || m.label[0]}</span>
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: "block", fontWeight: 700, fontSize: 15 }}>{m.label}</span>
@@ -132,14 +168,14 @@ export default function Deposit() {
                 <input className="field mono" placeholder="CVC" inputMode="numeric" value={card.cvc} style={{ flex: 1 }}
                   onChange={(e) => setCard({ ...card, cvc: e.target.value.replace(/\D/g, "").slice(0, 4) })} maxLength={4} />
               </div>
-              <p style={{ fontSize: 12, color: "var(--muted-4)", margin: "2px 0 0" }}>Test checkout — no real card is charged.</p>
+              <p style={{ fontSize: 12, color: "var(--muted-4)", margin: "2px 0 0" }}>Demo checkout — no real card is charged.</p>
             </div>
           )}
 
           {method === "crypto" && (
             <p style={{ fontSize: 13.5, color: "var(--muted-2)", margin: "16px 0 0", lineHeight: 1.6 }}>
               You’ll get an on-chain deposit address and QR on the next screen. Balance credits once
-              the USDC transfer confirms — nothing is custodied.
+              the USDC transfer to your own wallet confirms.
             </p>
           )}
 

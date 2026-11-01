@@ -3,6 +3,7 @@ import Logo from "@/components/Logo";
 import { PLANS, scoreColor, verdictOf } from "@/lib/data";
 import { compactUsd, percent, priceLabel } from "@/lib/format";
 import { api, type FeedToken } from "@/lib/api";
+import { brand } from "@/lib/brand";
 
 // The landing page shows the real feed. If the backend is down we drop those
 // sections rather than substituting invented tokens — a marketing page that
@@ -25,7 +26,7 @@ const NEW_WAY = [
 ];
 
 const STEPS = [
-  { n: "01", title: "Sign up with an email", body: "One step, no password to invent. Nothing to write down, no seed phrase homework." },
+  { n: "01", title: "Sign up with an email", body: `One step, no password to invent. ${brand.name} holds your wallet for you, so there is no seed phrase to write down or lose.` },
   { n: "02", title: "Pick from a short list", body: "We surface a handful of tokens with real liquidity and a plain-English safety read, instead of ten thousand rows." },
   { n: "03", title: "Press one button", body: "Amount in dollars, fee shown up front, routing handled. Set a take-profit at the same time if you want." },
 ];
@@ -52,7 +53,7 @@ export default async function LandingPage() {
           <nav className="site-nav">
             <a href="#how">How it works</a>
             <a href="#safety">Safety</a>
-            <a href="#compare">Why blip</a>
+            <a href="#compare">Why {brand.name}</a>
             <a href="#coaching">Coaching</a>
           </nav>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -69,10 +70,10 @@ export default async function LandingPage() {
           <span className="serif" style={{ fontWeight: 400, letterSpacing: "-.02em", color: "var(--lime)" }}>thirty settings.</span>
         </h1>
         <p style={{ margin: "32px auto 0", maxWidth: 560, fontSize: 19, lineHeight: 1.55, color: "var(--muted)" }}>
-          blip reads the chain for you: the live price, the fee, and the safety read in one number before you press buy. No slippage sliders, no gas math.
+          {brand.name} reads the chain for you: the live price, the fee, and the safety read in one number before you press buy. No slippage sliders, no gas math.
         </p>
         <div style={{ display: "flex", gap: 14, justifyContent: "center", marginTop: 44, flexWrap: "wrap" }}>
-          <Link href="/auth?mode=signup" className="btn btn-primary" style={{ padding: "19px 38px", fontSize: 16.5, boxShadow: "0 12px 40px -12px rgba(198,242,78,.5)" }}>
+          <Link href="/auth?mode=signup" className="btn btn-primary" style={{ padding: "19px 38px", fontSize: 16.5, boxShadow: "0 12px 40px -12px var(--lime-glow)" }}>
             Create free account
           </Link>
           <Link href="/auth?mode=signin" className="btn btn-ghost" style={{ padding: "19px 34px", fontSize: 16.5 }}>
@@ -80,14 +81,14 @@ export default async function LandingPage() {
           </Link>
         </div>
         <p style={{ marginTop: 26, fontSize: 13.5, color: "var(--muted-4)" }}>
-          Non-custodial · 60-second setup · no card required
+          Custodial wallet · 60-second setup · no card required
         </p>
       </section>
 
       {/* hero product card — the live top-of-feed token */}
       {hero && (
         <section style={{ maxWidth: 1080, margin: "92px auto 0", padding: "0 32px" }}>
-          <div style={{ borderRadius: 40, padding: 26, background: "linear-gradient(180deg, rgba(198,242,78,.16), rgba(198,242,78,0) 60%)", border: "1px solid var(--hair)" }}>
+          <div style={{ borderRadius: 40, padding: 26, background: "linear-gradient(180deg, var(--lime-soft), transparent 60%)", border: "1px solid var(--hair)" }}>
             <div className="grid-2" style={{ borderRadius: 28, background: "var(--card)", border: "1px solid var(--hair)", padding: 34, gridTemplateColumns: "1.15fr .85fr", gap: 34 }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -203,7 +204,7 @@ export default async function LandingPage() {
                 "Position caps you set once, enforced on every buy",
               ].map((t) => (
                 <li key={t} style={{ display: "flex", gap: 14, alignItems: "flex-start", fontSize: 15.5, color: "var(--text-dim)" }}>
-                  <span aria-hidden style={{ width: 22, height: 22, borderRadius: 999, background: "rgba(198,242,78,.14)", color: "var(--lime)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 800, flex: "none", marginTop: 2 }}>✓</span>
+                  <span aria-hidden style={{ width: 22, height: 22, borderRadius: 999, background: "var(--lime-soft)", color: "var(--lime)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 800, flex: "none", marginTop: 2 }}>✓</span>
                   {t}
                 </li>
               ))}
@@ -255,8 +256,8 @@ export default async function LandingPage() {
               ))}
             </div>
           </div>
-          <div style={{ border: "1px solid rgba(198,242,78,.3)", borderRadius: 32, padding: 40, background: "linear-gradient(180deg, rgba(198,242,78,.06), rgba(198,242,78,.01))" }}>
-            <p className="eyebrow" style={{ margin: 0 }}>With blip</p>
+          <div style={{ border: "1px solid var(--lime-line)", borderRadius: 32, padding: 40, background: "linear-gradient(180deg, var(--lime-wash), transparent)" }}>
+            <p className="eyebrow" style={{ margin: 0 }}>With {brand.name}</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 18, marginTop: 30 }}>
               {NEW_WAY.map((t) => (
                 <div key={t} style={{ display: "flex", gap: 14, alignItems: "center", fontSize: 16, fontWeight: 500 }}>
@@ -309,10 +310,10 @@ export default async function LandingPage() {
       <section className="wrap section">
         <div style={{ borderRadius: 40, background: "var(--lime)", color: "var(--lime-ink)", padding: "90px 60px", textAlign: "center" }}>
           <h2 className="h2" style={{ fontSize: 66, lineHeight: .98 }}>Your first position<br />is three taps away.</h2>
-          <p style={{ margin: "24px auto 0", maxWidth: 480, fontSize: 18, color: "rgba(11,15,2,.7)", lineHeight: 1.55 }}>
-            Free account, non-custodial wallet, and a feed that stays short on purpose.
+          <p style={{ margin: "24px auto 0", maxWidth: 480, fontSize: 18, color: "color-mix(in srgb, var(--lime-ink) 70%, transparent)", lineHeight: 1.55 }}>
+            Free account, a wallet {brand.name} holds for you, and a feed that stays short on purpose.
           </p>
-          <Link href="/auth?mode=signup" className="btn" style={{ marginTop: 40, display: "inline-block", background: "var(--lime-ink)", color: "#E7FFB5", padding: "20px 42px", fontSize: 17 }}>
+          <Link href="/auth?mode=signup" className="btn" style={{ marginTop: 40, display: "inline-block", background: "var(--lime-ink)", color: "var(--lime-hi)", padding: "20px 42px", fontSize: 17 }}>
             Create free account
           </Link>
         </div>
@@ -323,7 +324,7 @@ export default async function LandingPage() {
         <nav style={{ marginLeft: "auto", display: "flex", gap: 28 }}>
           <a href="#how" style={{ color: "var(--muted-4)" }}>Product</a>
           <a href="#safety" style={{ color: "var(--muted-4)" }}>Safety</a>
-          <a href="#compare" style={{ color: "var(--muted-4)" }}>Why blip</a>
+          <a href="#compare" style={{ color: "var(--muted-4)" }}>Why {brand.name}</a>
           <a href="#coaching" style={{ color: "var(--muted-4)" }}>Coaching</a>
         </nav>
         <p style={{ maxWidth: 300, textAlign: "right", margin: 0 }}>Crypto is volatile. Trade only what you can lose.</p>

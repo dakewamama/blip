@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { money } from "@/lib/format";
+import { brand } from "@/lib/brand";
+import { useCustody } from "@/lib/custody";
 import { useBlip } from "@/lib/store";
 
 /**
@@ -15,16 +17,22 @@ type Msg = { from: "bot" | "you"; text: string; link?: { href: string; label: st
 
 type Rule = {
   match: RegExp;
-  reply: (ctx: { cash: number; handle: string }) => Omit<Msg, "from">;
+  reply: (ctx: { cash: number; handle: string; custodial: boolean }) => Omit<Msg, "from">;
 };
 
 const RULES: Rule[] = [
   {
     match: /(balance|cash|money|fund|deposit|add funds)/i,
-    reply: ({ cash }) => ({
-      text: `Your balance lives on this device: ${money(cash)} cash right now. Deposits are simulated in this build — the Add funds screen walks the full flow, and the crypto route shows a real USDC address + QR.`,
-      link: { href: "/app/deposit", label: "Open Add funds" },
-    }),
+    reply: ({ cash, custodial }) =>
+      custodial
+        ? {
+            text: `Your balance is what's in the wallet ${brand.name} holds for you: ${money(cash)} in SOL right now, plus any tokens. Send SOL to your address on the wallet page to add funds; withdrawals go out from the same page.`,
+            link: { href: "/app/wallet", label: "Open your wallet" },
+          }
+        : {
+            text: `This is a demo build: your balance lives on this device, ${money(cash)} cash right now. Deposits are simulated — the Add funds screen walks the full flow.`,
+            link: { href: "/app/deposit", label: "Open Add funds" },
+          },
   },
   {
     match: /(refer|referr|invite|affiliate|partner|recruit)/i,
@@ -35,8 +43,8 @@ const RULES: Rule[] = [
   },
   {
     match: /(buy|trade|order|fill|cap|limit)/i,
-    reply: () => ({
-      text: "Buys are quoted live against the bonding curve — fee and price impact shown before you confirm — and your per-trade cap is enforced on every path, terminal included. Fills settle in the app until a wallet is connected.",
+    reply: ({ custodial }) => ({
+      text: `Buys are quoted live against the bonding curve — fee and price impact shown before you confirm — and your per-trade cap is enforced on every path, terminal included. ${custodial ? "Each fill is signed from your wallet and confirmed on-chain." : "In this demo build fills are simulated."}`,
       link: { href: "/app/terminal", label: "Open Terminal" },
     }),
   },
@@ -64,8 +72,8 @@ const RULES: Rule[] = [
   {
     match: /(wallet|address|connect|phantom|seed)/i,
     reply: () => ({
-      text: "blip is non-custodial — you can track any Solana wallet read-only from Portfolio. Full trading from an external wallet (wallet adapter) is the next piece on the roadmap.",
-      link: { href: "/app/portfolio", label: "Track a wallet" },
+      text: `${brand.name} holds your wallet for you — custodial, so there's no seed phrase to keep. Your deposit address, balance and withdrawals are all on the wallet page.`,
+      link: { href: "/app/wallet", label: "Open your wallet" },
     }),
   },
   {
@@ -77,15 +85,17 @@ const RULES: Rule[] = [
   },
 ];
 
-const QUICK = ["How does my balance work?", "How do referrals pay?", "Why are fills simulated?", "Something looks broken"];
+const QUICK = ["How does my balance work?", "How do referrals pay?", "Who holds my wallet?", "Something looks broken"];
+const BOT = `${brand.name}bot`;
 
 export default function SupportChat() {
   const { state, showToast } = useBlip();
+  const custodial = useCustody().enabled;
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       from: "bot",
-      text: "gm. blipbot here — meme division, support department. Ask me anything about the app, or pick a shortcut below.",
+      text: `gm. ${BOT} here — meme division, support department. Ask me anything about the app, or pick a shortcut below.`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -108,7 +118,7 @@ export default function SupportChat() {
 
   const answer = (text: string) => {
     const rule = RULES.find((r) => r.match.test(text));
-    if (rule) return rule.reply({ cash: state.cash, handle: state.handle });
+    if (rule) return rule.reply({ cash: state.cash, handle: state.handle, custodial });
     return {
       text: "That one's beyond my keyword brain, and I won't invent an answer. The Support page has the FAQ, live system status and human channels — they actually read it.",
       link: { href: "/app/support", label: "Open Support" },
@@ -130,7 +140,7 @@ export default function SupportChat() {
   const copyTranscript = async () => {
     try {
       await navigator.clipboard.writeText(
-        msgs.map((m) => `${m.from === "you" ? "you" : "blipbot"}: ${m.text}`).join("\n"),
+        msgs.map((m) => `${m.from === "you" ? "you" : BOT}: ${m.text}`).join("\n"),
       );
       showToast("Transcript copied");
     } catch {
@@ -149,7 +159,7 @@ export default function SupportChat() {
             position: "fixed", right: 26, bottom: 26, zIndex: 80,
             width: 58, height: 58, borderRadius: 999, border: "none", cursor: "pointer",
             background: "var(--lime)", color: "var(--lime-ink)", fontSize: 24, fontWeight: 800,
-            boxShadow: "0 16px 40px -12px rgba(198,242,78,.55)", transition: ".18s",
+            boxShadow: "0 16px 40px -12px var(--lime-glow)", transition: ".18s",
           }}
         >
           ?
@@ -171,7 +181,7 @@ export default function SupportChat() {
           <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "18px 20px", borderBottom: "1px solid var(--hair)", background: "var(--surface-deep)" }}>
             <span className="avatar" style={{ width: 36, height: 36, background: "var(--lime)", color: "var(--lime-ink)", fontSize: 16 }}>b</span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>blip support</div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{brand.name} support</div>
               <div style={{ fontSize: 12, color: "var(--muted-3)" }}>instant answers · humans on the Support page</div>
             </div>
             <button type="button" className="btn-quiet" style={{ marginLeft: "auto", padding: "4px 8px", fontSize: 13 }} onClick={copyTranscript}>
@@ -188,8 +198,8 @@ export default function SupportChat() {
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.from === "you" ? "flex-end" : "flex-start" }}>
                 <div style={{
                   maxWidth: "86%", padding: "12px 15px", borderRadius: 18, fontSize: 14, lineHeight: 1.55,
-                  background: m.from === "you" ? "rgba(198,242,78,.14)" : "var(--surface-deep)",
-                  border: `1px solid ${m.from === "you" ? "rgba(198,242,78,.3)" : "var(--hair)"}`,
+                  background: m.from === "you" ? "var(--lime-soft)" : "var(--surface-deep)",
+                  border: `1px solid ${m.from === "you" ? "var(--lime-line)" : "var(--hair)"}`,
                   borderBottomRightRadius: m.from === "you" ? 6 : undefined,
                   borderBottomLeftRadius: m.from === "you" ? undefined : 6,
                 }}>
@@ -204,7 +214,7 @@ export default function SupportChat() {
               </div>
             ))}
             {typing && (
-              <div className="mono" style={{ color: "var(--muted-4)", fontSize: 13 }}>blipbot is typing…</div>
+              <div className="mono" style={{ color: "var(--muted-4)", fontSize: 13 }}>{BOT} is typing…</div>
             )}
           </div>
 

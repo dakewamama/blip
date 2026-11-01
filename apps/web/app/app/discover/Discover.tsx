@@ -154,7 +154,7 @@ export default function Discover({
 
                 <button type="button" className="btn" disabled={busy || t.graduated}
                   title={t.graduated ? "Graduated — trade this on a DEX" : undefined}
-                  style={{ flex: "none", background: "rgba(198,242,78,.12)", borderColor: "rgba(198,242,78,.32)", color: "var(--lime)", padding: "12px 22px", fontSize: 14 }}
+                  style={{ flex: "none", background: "var(--lime-soft)", borderColor: "var(--lime-line)", color: "var(--lime)", padding: "12px 22px", fontSize: 14 }}
                   onClick={() => buy(t, Math.min(50, state.cap), false)}>
                   {busy ? "Quoting…" : "Buy"}
                 </button>

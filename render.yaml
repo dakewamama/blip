@@ -1,4 +1,6 @@
-# Render Blueprint — provisions both services in one apply.
+# Render Blueprint — the API, plus the blip front end.
+# The flick and kite front ends (and blip's too, if preferred) deploy to Vercel
+# from apps/web; see DEPLOY.md. Every front end talks to this one API.
 # Deploy: Render Dashboard → New + → Blueprint → pick this repo → Apply.
 #
 # Free plans sleep after ~15 min idle; the first request after a nap takes
@@ -31,8 +33,27 @@ services:
       # service URL, e.g. https://blip-web-m0r3.onrender.com
       - key: CORS_ORIGIN
         sync: false
+      # Deposits into held wallets are real money: credit only finalized ones.
       - key: SOLANA_COMMITMENT
-        value: confirmed
+        value: finalized
+      # Brands this API serves. Each front end names itself in x-blip-tenant.
+      - key: TENANTS
+        value: blip,flick,kite
+      # Custody (Privy server wallets). Unset = every front end runs in demo
+      # mode. Per-brand overrides: PRIVY_APP_ID_FLICK, PRIVY_APP_SECRET_FLICK…
+      - key: PRIVY_APP_ID
+        sync: false
+      - key: PRIVY_APP_SECRET
+        sync: false
+      # Optional P-256 key that owns every new wallet. Back it up: losing it
+      # locks those wallets.
+      - key: PRIVY_AUTHORIZATION_KEY
+        sync: false
+      # Signing and broadcasting trades needs this to be exactly "true".
+      - key: CUSTODY_LIVE_TRADING
+        value: "false"
+      - key: CUSTODY_MAX_TRADE_USD
+        value: "250"
 
   - type: web
     name: blip-web
@@ -50,3 +71,8 @@ services:
       # API service URL — keep it in sync if the service is ever renamed.
       - key: API_ORIGIN
         value: https://blip-api-j0d4.onrender.com
+      - key: NEXT_PUBLIC_BRAND
+        value: blip
+      # Same Privy app ID as PRIVY_APP_ID on the API. Unset = demo mode.
+      - key: NEXT_PUBLIC_PRIVY_APP_ID
+        sync: false

@@ -13,6 +13,7 @@ import { TokensModule } from './tokens/tokens.module';
 import { WalletModule } from './wallet/wallet.module';
 import { PumpModule } from './pump/pump.module';
 import { FundingModule } from './funding/funding.module';
+import { CustodyModule } from './custody/custody.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { FundingModule } from './funding/funding.module';
     PortfolioModule, // wallet holdings valued at realistic exit
     PumpModule,      // quotes, trade construction, transaction submission
     FundingModule,   // USDC-on-Solana deposit addresses + on-chain credit watcher
+    CustodyModule,   // Privy-held wallets per user per tenant: account, trade, withdraw
     TokensModule,    // raw pump.fun passthrough (legacy surface)
     WalletModule,
   ],

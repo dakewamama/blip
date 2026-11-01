@@ -1,5 +1,5 @@
 /**
- * Client for the trigger2nest backend.
+ * Client for the blip API.
  *
  * Every price, score and quote in this app comes from here. Nothing is
  * generated locally — if the backend is down the UI says so rather than
@@ -17,10 +17,18 @@
  * through your own public URL is a pointless extra hop, and in a container the
  * public hostname may not even resolve from inside.
  */
+import { brand } from "./brand";
+
 const INTERNAL_API =
   process.env.API_INTERNAL_URL ?? `${process.env.API_ORIGIN ?? "http://localhost:8000"}/api`;
 
 export const API_BASE = typeof window === "undefined" ? INTERNAL_API : "/api";
+
+/**
+ * Several branded front ends share one API. Every request names its brand, so
+ * the API keeps each brand's custodial wallets, Privy app and limits apart.
+ */
+const TENANT_HEADER = "x-blip-tenant";
 
 export type FeedFilter = "trending" | "new" | "gainers" | "safest" | "featured";
 
@@ -148,6 +156,40 @@ export interface FundingDeposit {
   at: string;
 }
 
+export interface CustodyStatus {
+  tenant: string;
+  /** Privy is configured for this brand: real accounts and custodial wallets. */
+  custody: boolean;
+  /** Trades are signed and broadcast. Off means balances and withdrawals only. */
+  liveTrading: boolean;
+  maxTradeUsd: number;
+  feeReserveSol: number;
+}
+
+export interface CustodyAccount extends CustodyStatus {
+  /** The Solana address this app holds for the user. Deposits go here. */
+  address: string;
+  portfolio: Portfolio;
+}
+
+export interface CustodyTradeResult {
+  signature: string;
+  explorer: string;
+  action: "buy" | "sell";
+  mint: string;
+  amountIn: number;
+  expectedOut: number;
+  minAmountOut: number;
+  valueUsd: number;
+}
+
+export interface CustodyWithdrawResult {
+  signature: string;
+  explorer: string;
+  to: string;
+  sent: string;
+}
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
     super(message);
@@ -155,12 +197,20 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init: RequestInit & { revalidate?: number } = {}): Promise<T> {
-  const { revalidate, ...rest } = init;
+async function request<T>(
+  path: string,
+  init: RequestInit & { revalidate?: number; token?: string } = {},
+): Promise<T> {
+  const { revalidate, token, ...rest } = init;
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...rest,
-    headers: { "Content-Type": "application/json", ...rest.headers },
+    headers: {
+      "Content-Type": "application/json",
+      [TENANT_HEADER]: brand.id,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...rest.headers,
+    },
     // Server components cache by default; these are live markets.
     ...(revalidate !== undefined ? { next: { revalidate } } : { cache: "no-store" as const }),
   });
@@ -204,7 +254,7 @@ export const api = {
 
   portfolio: (address: string) => request<Portfolio>(`/portfolio/${address}`),
 
-  /** Broadcasts a wallet-signed transaction. Needs a wallet adapter to be useful. */
+  /** Broadcasts a transaction a self-custody wallet signed. Custodial accounts trade through `custody` below. */
   submit: (signedTransaction: string, action?: "buy" | "sell", mint?: string) =>
     request<{ success: boolean; data?: { signature: string; explorer: string }; error?: string }>(
       `/pump/submit`,
@@ -228,4 +278,20 @@ export const api = {
     request<{ owner: string; deposits: FundingDeposit[] }>(
       `/funding/deposits?owner=${encodeURIComponent(owner)}`,
     ),
+
+  custody: {
+    status: () => request<CustodyStatus>(`/custody/status`),
+
+    /** Creates the wallet on first call. */
+    account: (token: string) => request<CustodyAccount>(`/custody/account`, { token }),
+
+    trade: (
+      token: string,
+      body: { mint: string; action: "buy" | "sell"; amount: number; slippageBps?: number; maxUsd?: number },
+    ) =>
+      request<CustodyTradeResult>(`/custody/trade`, { method: "POST", token, body: JSON.stringify(body) }),
+
+    withdraw: (token: string, body: { to: string; mint?: string; amount?: string; all?: boolean }) =>
+      request<CustodyWithdrawResult>(`/custody/withdraw`, { method: "POST", token, body: JSON.stringify(body) }),
+  },
 };

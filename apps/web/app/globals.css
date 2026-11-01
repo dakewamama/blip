@@ -12,9 +12,13 @@
   --muted-4: #6A6A76;
   --muted-5: #5C5C68;
   --faint: #4E4E58;
-  --lime: #C6F24E;
-  --lime-hi: #DCFF85;
-  --lime-ink: #0B0F02;
+  /* --lime, --lime-ink and --lime-soft are the brand accent, set on <html> by
+     app/layout.tsx from lib/brand.ts. Everything below derives from --lime so a
+     brand only has to name one colour. */
+  --lime-hi: color-mix(in srgb, var(--lime) 65%, #fff);
+  --lime-wash: color-mix(in srgb, var(--lime) 8%, transparent);
+  --lime-line: color-mix(in srgb, var(--lime) 36%, transparent);
+  --lime-glow: color-mix(in srgb, var(--lime) 50%, transparent);
   --green: #6BE38B;
   --red: #FF6B6B;
   --hair: rgba(255, 255, 255, 0.07);
@@ -251,7 +255,7 @@ input::placeholder { color: var(--muted-5); }
   text-align: left;
   color: inherit;
 }
-.token-row:hover { border-color: rgba(198,242,78,.35); background: #13131A; }
+.token-row:hover { border-color: var(--lime-line); background: #13131A; }
 
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -263,7 +267,7 @@ input::placeholder { color: var(--muted-5); }
   z-index: 90;
   max-width: calc(100vw - 32px);
   background: #16161E;
-  border: 1px solid rgba(198,242,78,.34);
+  border: 1px solid var(--lime-line);
   border-radius: 999px;
   padding: 16px 26px;
   display: flex;

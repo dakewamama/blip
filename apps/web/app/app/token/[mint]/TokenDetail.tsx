@@ -7,6 +7,7 @@ import TokenAvatar from "@/components/TokenAvatar";
 import { checkColor, checkIcon, scoreColor } from "@/lib/data";
 import { compactUsd, changeOver, money, percent, priceLabel, sol, tokenAmount } from "@/lib/format";
 import { useBlip } from "@/lib/store";
+import { brand } from "@/lib/brand";
 import { api, type FeedToken, type HistoryResult, type Quote, type SafetyReport } from "@/lib/api";
 
 const TIMEFRAMES = [
@@ -128,7 +129,7 @@ export default function TokenDetail({
             {TIMEFRAMES.map((tf, i) => (
               <button key={tf.label} type="button" onClick={() => setFrame(i)} aria-pressed={frame === i} className="mono"
                 style={{
-                  background: frame === i ? "rgba(198,242,78,.14)" : "rgba(255,255,255,.04)",
+                  background: frame === i ? "var(--lime-soft)" : "rgba(255,255,255,.04)",
                   border: "none", color: frame === i ? "var(--lime)" : "var(--muted-2)",
                   padding: "9px 18px", borderRadius: 999, fontSize: 13.5, fontWeight: 600, cursor: "pointer",
                 }}>
@@ -153,7 +154,7 @@ export default function TokenDetail({
               <div>
                 <p className="label" style={{ margin: 0 }}>Graduated</p>
                 <p style={{ fontSize: 15.5, color: "var(--muted)", margin: "12px 0 0", lineHeight: 1.6 }}>
-                  This token left the bonding curve and trades on an AMM pool. blip quotes the curve,
+                  This token left the bonding curve and trades on an AMM pool. {brand.name} quotes the curve,
                   so there is nothing to price here — route it through a DEX aggregator instead.
                 </p>
               </div>
@@ -201,7 +202,7 @@ export default function TokenDetail({
                 <button type="button" onClick={() => setTakeProfit((v) => !v)} role="switch" aria-checked={takeProfit}
                   style={{
                     width: "100%", marginTop: 12, display: "flex", alignItems: "center", gap: 14,
-                    background: "var(--surface-deep)", border: `1px solid ${takeProfit ? "rgba(198,242,78,.34)" : "var(--hair-soft)"}`,
+                    background: "var(--surface-deep)", border: `1px solid ${takeProfit ? "var(--lime-line)" : "var(--hair-soft)"}`,
                     padding: "16px 18px", borderRadius: 18, cursor: "pointer", color: "var(--text)", textAlign: "left", transition: ".18s",
                   }}>
                   <span style={{ fontSize: 14, color: "var(--muted)" }}>Auto take-profit at 2×</span>

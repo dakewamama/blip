@@ -7,6 +7,10 @@ const API_ORIGIN = process.env.API_ORIGIN ?? "http://localhost:8000";
 const nextConfig = {
   reactStrictMode: true,
 
+  // One checkout serves several brands; each instance builds into its own
+  // directory so they do not overwrite each other's output.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+
   async rewrites() {
     return [
       {

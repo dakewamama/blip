@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import TokenAvatar from "@/components/TokenAvatar";
 import { compactUsd, money, percent, priceLabel, signedMoney, tokenAmount } from "@/lib/format";
+import { useCustody } from "@/lib/custody";
 import { liveValue, useBlip } from "@/lib/store";
 import { api, type Portfolio as LiveWallet } from "@/lib/api";
 
 export default function Portfolio() {
   const { state, sell, patch, pendingMint, prices, refreshPrices, showToast } = useBlip();
+  const custodial = useCustody().enabled;
 
   const [wallet, setWallet] = useState<LiveWallet | null>(null);
   const [walletError, setWalletError] = useState<string | null>(null);
@@ -49,7 +51,9 @@ export default function Portfolio() {
             {signedMoney(pnl)} against {money(basis)} in
           </p>
           <p style={{ fontSize: 12.5, color: "var(--muted-4)", margin: "10px 0 0", lineHeight: 1.5 }}>
-            Marked on-device at the live market price, refreshed every 15s.
+            {custodial
+              ? "Holdings read from your wallet on-chain, marked at the live market price every 15s."
+              : "Demo build: paper positions marked at the live market price, refreshed every 15s."}
             {unmarked > 0 && ` ${unmarked} position${unmarked === 1 ? "" : "s"} without a live price are excluded.`}
           </p>
         </div>
@@ -74,7 +78,7 @@ export default function Portfolio() {
 
       {state.holdings.length > 0 ? (
         <section style={{ marginTop: 40 }}>
-          <h2 className="label" style={{ letterSpacing: ".1em", margin: 0 }}>Paper positions</h2>
+          <h2 className="label" style={{ letterSpacing: ".1em", margin: 0 }}>{custodial ? "Positions" : "Paper positions"}</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 18 }}>
             {state.holdings.map((h) => {
               const price = prices[h.mint];
@@ -130,10 +134,10 @@ export default function Portfolio() {
         </div>
       )}
 
-      {/* Read-only view of a real wallet, separate from the paper book so the
-          two can never be confused for one another. */}
+      {/* Read-only view of any other wallet, kept apart from the positions above
+          so the two can never be confused for one another. */}
       <section style={{ marginTop: 46 }}>
-        <h2 className="label" style={{ letterSpacing: ".1em", margin: 0 }}>Track a real wallet</h2>
+        <h2 className="label" style={{ letterSpacing: ".1em", margin: 0 }}>{custodial ? "Track another wallet" : "Track a real wallet"}</h2>
         <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
           <input className="field mono" style={{ flex: 1, minWidth: 260, fontSize: 14 }}
             placeholder="Solana address" value={addressInput} aria-label="Solana wallet address"

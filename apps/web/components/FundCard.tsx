@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { useCustody } from "@/lib/custody";
+import { money } from "@/lib/format";
 import { useBlip } from "@/lib/store";
 import { api, ApiError, type DepositAddress } from "@/lib/api";
 
@@ -10,12 +12,52 @@ const SOL_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const short = (s: string) => (s.length > 12 ? `${s.slice(0, 4)}…${s.slice(-4)}` : s);
 
 /**
- * The dashboard's direct deposit lane: your USDC-on-Solana address with a QR,
- * for when the card flow is not what you want. Same non-custodial funding
- * service the Add funds screen uses — the address is the user's own wallet
- * and blip only watches the chain for confirmed transfers.
+ * The dashboard's direct deposit lane. With a held wallet it is that wallet's
+ * SOL address; in the demo build it is the USDC watch on a wallet the user
+ * owns, the same funding service the demo Add funds screen uses.
  */
 export default function FundCard() {
+  return useCustody().enabled ? <CustodyFundCard /> : <DemoFundCard />;
+}
+
+function CustodyFundCard() {
+  const { account } = useCustody();
+  const { state, showToast } = useBlip();
+  const address = account?.address ?? null;
+
+  return (
+    <div className="panel" style={{ marginTop: 26, display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap", padding: 24 }}>
+      {address && (
+        <div style={{ background: "#fff", padding: 9, borderRadius: 14, lineHeight: 0, flex: "none" }}>
+          <QRCodeSVG value={`solana:${address}`} size={96} bgColor="#ffffff" fgColor="#08080A" level="M" />
+        </div>
+      )}
+      <div style={{ flex: 1, minWidth: 240 }}>
+        <p className="label" style={{ margin: 0 }}>Add funds — send SOL to your wallet</p>
+        {address ? (
+          <>
+            <button type="button" title="Copy address"
+              onClick={() => navigator.clipboard.writeText(address).then(() => showToast("Address copied"), () => showToast("Copy failed — select and copy manually"))}
+              style={{ display: "block", marginTop: 8, background: "var(--surface-deep)", border: "1px solid var(--hair)", borderRadius: 12, padding: "10px 14px", cursor: "pointer", color: "var(--text)", textAlign: "left", maxWidth: 460 }}>
+              <span className="label" style={{ fontSize: 10.5 }}>SOL · Solana — tap to copy</span>
+              <span className="mono" style={{ display: "block", fontSize: 13, marginTop: 4, wordBreak: "break-all" }}>{address}</span>
+            </button>
+            <p style={{ fontSize: 12.5, color: "var(--muted-4)", margin: "8px 0 0" }}>
+              {money(state.cash)} in the wallet now · lands once the transfer confirms.
+            </p>
+          </>
+        ) : (
+          <p style={{ color: "var(--muted-2)", fontSize: 13.5, margin: "8px 0 0" }}>Loading your wallet…</p>
+        )}
+      </div>
+      <Link href="/app/wallet" className="btn btn-ghost" style={{ flex: "none", padding: "12px 20px", fontSize: 13.5 }}>
+        Wallet and withdrawals →
+      </Link>
+    </div>
+  );
+}
+
+function DemoFundCard() {
   const { state, patch, showToast } = useBlip();
   const owner = state.walletAddress;
 
@@ -102,7 +144,7 @@ export default function FundCard() {
       )}
 
       <div style={{ flex: 1, minWidth: 240 }}>
-        <p className="label" style={{ margin: 0 }}>Add funds — deposit straight to your wallet</p>
+        <p className="label" style={{ margin: 0 }}>Demo funding — watch USDC arrive at your own wallet</p>
 
         {!owner ? (
           <>

@@ -1,6 +1,8 @@
-# trigger2nest — API
+# blip API
 
 Base path is `/api`. `/health` sits outside the prefix for load balancers.
+
+One API serves every branded front end (blip, flick, kite). Each request names its brand in `x-blip-tenant`; unknown brands are a 400 and a missing header means `blip`. Market data is shared; custody is separate per brand.
 
 ## What changed and why
 
@@ -59,7 +61,40 @@ POST /api/pump/submit        -> { signedTransaction, action?, mint? }
 
 Quote returns `amountOut`, `minAmountOut` (the slippage floor the frontend should enforce), `priceImpact`, `executionPrice` vs `spotPrice`, and `highImpact` when impact exceeds 5%. Graduated tokens are rejected with an explanation — the bonding curve no longer prices them and the trade belongs on a DEX aggregator.
 
-`/submit` broadcasts a wallet-signed transaction, waits for confirmation, and returns the signature or the on-chain error. This closes the loop that previously ended at "here is an unsigned transaction".
+`buy-token` / `sell-token` return the PumpPortal transaction as base64. Before, they read PumpPortal's raw transaction bytes as text, which corrupted them, so nothing signed from those responses could ever have landed. `/submit` broadcasts a transaction a self-custody wallet signed, waits for confirmation, and returns the signature or the on-chain error. Custodial accounts don't use these routes; they trade through `/custody/trade`.
+
+### Custody
+
+```
+GET  /api/custody/status            -> { tenant, custody, liveTrading, maxTradeUsd, feeReserveSol }
+GET  /api/custody/account   (auth)  -> status + { address, portfolio }; creates the wallet on first call
+POST /api/custody/trade     (auth)  { mint, action, amount, slippageBps?, maxUsd? }
+POST /api/custody/withdraw  (auth)  { to, mint?, amount? | all: true }
+```
+
+"auth" is a Privy access token in `Authorization: Bearer …`. It is checked against the Privy app configured for the caller's brand (`PRIVY_APP_ID`, or `PRIVY_APP_ID_<BRAND>`).
+
+- **Wallets.** Each user gets one Privy server wallet per brand. The wallet's write-once `external_id` (`<brand>-<privy user>`) is the only mapping, so there is no local table to lose. If `PRIVY_AUTHORIZATION_KEY` is set, new wallets are owned by that P-256 key and every signature needs it.
+- **Trades.** Every number is worked out again on the server: the wallet balance, a fresh curve quote, the lower of the user's cap and `CUSTODY_MAX_TRADE_USD`, the 5% price-impact refusal, and a SOL reserve for fees. Then the PumpPortal transaction is decoded and checked before signing (`custody/tx-guard.ts`):
+  - the custodial wallet pays the fee and is the only signer;
+  - every program is on an allowlist;
+  - the pump.fun instruction is the requested side on the requested mint, and a buy can't spend more than the amount plus slippage;
+  - outbound SOL transfers and the priority fee are capped.
+  
+  Anything else is refused with a 502 and never signed. Trading needs `CUSTODY_LIVE_TRADING=true`; otherwise it is a 403.
+- **Withdrawals.** SOL or any SPL / Token-2022 token, to any address. The recipient's token account is created if needed. "all" sends everything left after the network fee.
+- **One at a time.** Only one transaction per wallet runs at once; a second is a 409.
+
+### Funding (demo lane)
+
+```
+POST /api/funding/address         { owner }                        -> USDC deposit address + Solana Pay QR
+POST /api/funding/build-transfer  { fromWallet, owner, amountUsdc } -> unsigned USDC transfer
+GET  /api/funding/balance?owner=  -> credited USDC
+GET  /api/funding/deposits?owner= -> credited deposits, newest first
+```
+
+This watches USDC arriving at a wallet the user owns and credits a ledger once a deposit reaches `SOLANA_COMMITMENT`. It is the demo build's funding route. Custodial accounts are funded by sending SOL straight to the held wallet. The ledger lives in `FUNDING_STORE_DIR` on local disk.
 
 ### Portfolio
 
@@ -81,3 +116,4 @@ GET /api/ready   readiness, actually reaches pump.fun and the RPC
 - SOL price never falls back to an invented number. If every source fails, `price: 0` and `solPriceStale: true` — render SOL amounts rather than a fictional dollar value.
 - Throttled at 120 req/min per IP.
 - `ValidationPipe` runs with `forbidNonWhitelisted`, so unknown body fields are a 400.
+- Tests: `npm test` covers the transaction guard, tenant resolution, custody config and amount maths. There is also a `/health` e2e test. Signing and broadcasting against Privy and mainnet are not covered by automated tests.

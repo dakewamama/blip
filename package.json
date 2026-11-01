@@ -2,17 +2,29 @@
   "name": "blip",
   "private": true,
   "version": "1.0.0",
-  "description": "blip — memecoin trading. Next.js front end and NestJS market-data/trading API in one workspace.",
-  "workspaces": ["apps/*"],
-  "engines": { "node": ">=20" },
+  "description": "blip — memecoin trading. One NestJS API serving several branded Next.js front ends (blip, flick, kite).",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "dev": "concurrently -n api,web -c magenta,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev": "concurrently -n api,blip,flick,kite -c magenta,green,red,cyan \"npm:dev:api\" \"npm:dev:blip\" \"npm:dev:flick\" \"npm:dev:kite\"",
     "dev:api": "npm run start:dev --workspace @blip/api",
-    "dev:web": "npm run dev --workspace @blip/web",
-    "build": "npm run build --workspace @blip/api && npm run build --workspace @blip/web",
-    "start": "concurrently -n api,web -c magenta,cyan \"npm:start:api\" \"npm:start:web\"",
+    "dev:web": "npm run dev:blip",
+    "dev:blip": "node scripts/web.mjs dev blip 3000",
+    "dev:flick": "node scripts/web.mjs dev flick 3001",
+    "dev:kite": "node scripts/web.mjs dev kite 3002",
+    "build": "npm run build --workspace @blip/api && npm run build:web",
+    "build:web": "node scripts/web.mjs build blip && node scripts/web.mjs build flick && node scripts/web.mjs build kite",
+    "start": "concurrently -n api,blip,flick,kite -c magenta,green,red,cyan \"npm:start:api\" \"npm:start:blip\" \"npm:start:flick\" \"npm:start:kite\"",
     "start:api": "npm run start:prod --workspace @blip/api",
     "start:web": "npm run start --workspace @blip/web",
+    "start:blip": "node scripts/web.mjs start blip 3000",
+    "start:flick": "node scripts/web.mjs start flick 3001",
+    "start:kite": "node scripts/web.mjs start kite 3002",
+    "test": "npm test --workspace @blip/api",
     "typecheck": "npm run typecheck --workspace @blip/api && npm run typecheck --workspace @blip/web",
     "lint": "npm run lint --workspace @blip/web",
     "setup": "node scripts/setup.mjs"

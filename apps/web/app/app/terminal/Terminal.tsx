@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { money, priceLabel, tokenAmount } from "@/lib/format";
 import { liveValue, referralCode, useBlip } from "@/lib/store";
+import { brand } from "@/lib/brand";
 import { randomMeme } from "@/lib/memes";
 import { api, type FeedToken } from "@/lib/api";
 
@@ -30,7 +31,7 @@ const HELP = [
 export default function Terminal() {
   const { state, ready, buy, sell, deposit, showToast, prices } = useBlip();
   const [lines, setLines] = useState<Line[]>([
-    { kind: "sys", text: "blip terminal · type `help` to start" },
+    { kind: "sys", text: `${brand.name} terminal · type \`help\` to start` },
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -279,7 +280,7 @@ export default function Terminal() {
           <span style={{ width: 11, height: 11, borderRadius: 999, background: "#FFB35C" }} />
           <span style={{ width: 11, height: 11, borderRadius: 999, background: "#6BE38B" }} />
           <span className="mono" style={{ marginLeft: 10, fontSize: 12.5, color: "var(--muted-3)" }}>
-            {state.handle ? `@${state.handle}` : "guest"} — blip
+            {state.handle ? `@${state.handle}` : "guest"} — {brand.name}
           </span>
         </div>
 

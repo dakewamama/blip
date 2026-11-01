@@ -27,7 +27,7 @@ export type Plan = {
 };
 
 export const COACHES: Coach[] = [
-  { id: "mara", name: "Mara Okafor", mono: "M", color: "#C6F24E", focus: "Risk sizing \u00b7 entries", rating: "Booking open", sessions: "weekend slots" },
+  { id: "mara", name: "Mara Okafor", mono: "M", color: "var(--lime)", focus: "Risk sizing \u00b7 entries", rating: "Booking open", sessions: "weekend slots" },
   { id: "dev", name: "Devin Hale", mono: "D", color: "#7DD3FC", focus: "Exits & take-profit ladders", rating: "Booking open", sessions: "weekday evenings" },
   { id: "yuki", name: "Yuki Tanaka", mono: "Y", color: "#A78BFA", focus: "Contract reading for beginners", rating: "Waitlist", sessions: "opens next week" },
 ];

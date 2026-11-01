@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useCustody } from "@/lib/custody";
 import { money } from "@/lib/format";
 import { useBlip } from "@/lib/store";
 
@@ -9,11 +10,13 @@ const QUICK = [50, 100, 250];
 
 /**
  * The balance chip doubles as the quick top-up. When cash runs dry mid-loop
- * the buy path sends the user here (blip:open-topup) instead of dead-ending:
- * one tap credits the simulated balance and trading continues.
+ * the buy path sends the user here (blip:open-topup) instead of dead-ending.
+ * In the demo build one tap credits the simulated balance; with a held wallet
+ * it points at the deposit address instead, since only the chain moves money.
  */
 export default function TopUpChip() {
   const { state, deposit, showToast } = useBlip();
+  const custody = useCustody();
   const [open, setOpen] = useState(false);
   const [custom, setCustom] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -50,7 +53,7 @@ export default function TopUpChip() {
         aria-expanded={open}
         title="Balance — tap to top up"
         style={{
-          background: "var(--surface)", border: `1px solid ${open ? "rgba(198,242,78,.4)" : "rgba(255,255,255,.08)"}`,
+          background: "var(--surface)", border: `1px solid ${open ? "var(--lime-line)" : "rgba(255,255,255,.08)"}`,
           borderRadius: 999, padding: "10px 22px", textAlign: "right", cursor: "pointer", color: "var(--text)",
         }}
       >
@@ -60,7 +63,7 @@ export default function TopUpChip() {
           <span aria-hidden style={{ fontSize: 10, color: "var(--muted-4)" }}>▼</span>
         </span>
         <span className="mono" style={{ display: "block", fontSize: 11.5, color: "var(--muted-4)", marginTop: 1 }}>
-          cash · tap to add
+          {custody.enabled ? "SOL in wallet · tap to add" : "cash · tap to add"}
         </span>
       </button>
 
@@ -74,42 +77,64 @@ export default function TopUpChip() {
             padding: 22, boxShadow: "0 30px 80px -20px rgba(0,0,0,.9)", animation: "blipPop .22s cubic-bezier(.2,.8,.2,1) both",
           }}
         >
-          <p className="label" style={{ margin: 0 }}>Quick top-up</p>
-          <p className="mono" style={{ fontSize: 30, letterSpacing: "-.03em", margin: "10px 0 0" }}>{money(state.cash)}</p>
+          {custody.enabled ? (
+            <>
+              <p className="label" style={{ margin: 0 }}>Add funds</p>
+              <p className="mono" style={{ fontSize: 30, letterSpacing: "-.03em", margin: "10px 0 0" }}>{money(state.cash)}</p>
+              <p style={{ fontSize: 13, color: "var(--muted-2)", margin: "12px 0 0", lineHeight: 1.55 }}>
+                Send SOL to your wallet address. It lands as soon as the transfer confirms.
+              </p>
+              {custody.account && (
+                <button type="button" className="mono"
+                  onClick={() => navigator.clipboard.writeText(custody.account!.address).then(() => showToast("Address copied"), () => showToast("Copy failed"))}
+                  style={{ width: "100%", marginTop: 12, background: "var(--surface-deep)", border: "1px solid var(--hair)", borderRadius: 12, padding: "11px 14px", color: "var(--text)", fontSize: 12.5, textAlign: "left", wordBreak: "break-all", cursor: "pointer" }}>
+                  {custody.account.address}
+                </button>
+              )}
+              <div style={{ display: "flex", gap: 14, marginTop: 12, fontSize: 13.5 }}>
+                <Link href="/app/wallet" onClick={() => setOpen(false)}>QR, balance and withdrawals</Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="label" style={{ margin: 0 }}>Quick top-up</p>
+              <p className="mono" style={{ fontSize: 30, letterSpacing: "-.03em", margin: "10px 0 0" }}>{money(state.cash)}</p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 16 }}>
-            {QUICK.map((a) => (
-              <button key={a} type="button" className="chip mono" onClick={() => add(a)}>
-                +${a}
-              </button>
-            ))}
-          </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 16 }}>
+                {QUICK.map((a) => (
+                  <button key={a} type="button" className="chip mono" onClick={() => add(a)}>
+                    +${a}
+                  </button>
+                ))}
+              </div>
 
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <input
-              inputMode="numeric"
-              placeholder="Custom amount"
-              aria-label="Custom top-up amount"
-              value={custom}
-              onChange={(e) => setCustom(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              onKeyDown={(e) => e.key === "Enter" && value > 0 && add(value)}
-              className="mono"
-              style={{ flex: 1, background: "var(--surface-deep)", border: "1px solid var(--hair)", borderRadius: 12, padding: "11px 14px", color: "var(--text)", fontSize: 14, outline: "none" }}
-            />
-            <button type="button" className="btn btn-primary" style={{ padding: "11px 18px", fontSize: 14 }} disabled={value <= 0} onClick={() => add(value)}>
-              Add
-            </button>
-          </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <input
+                  inputMode="numeric"
+                  placeholder="Custom amount"
+                  aria-label="Custom top-up amount"
+                  value={custom}
+                  onChange={(e) => setCustom(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onKeyDown={(e) => e.key === "Enter" && value > 0 && add(value)}
+                  className="mono"
+                  style={{ flex: 1, background: "var(--surface-deep)", border: "1px solid var(--hair)", borderRadius: 12, padding: "11px 14px", color: "var(--text)", fontSize: 14, outline: "none" }}
+                />
+                <button type="button" className="btn btn-primary" style={{ padding: "11px 18px", fontSize: 14 }} disabled={value <= 0} onClick={() => add(value)}>
+                  Add
+                </button>
+              </div>
 
-          <p style={{ fontSize: 11.5, color: "var(--muted-5)", margin: "12px 0 0", lineHeight: 1.5 }}>
-            Simulated card top-up — nothing is charged in this build.
-          </p>
-          <div style={{ display: "flex", gap: 14, marginTop: 12, fontSize: 13.5 }}>
-            <Link href="/app/deposit" onClick={() => setOpen(false)}>Card flow</Link>
-            <Link href="/app/wallet" onClick={() => setOpen(false)}>Deposit with QR</Link>
-          </div>
+              <p style={{ fontSize: 11.5, color: "var(--muted-5)", margin: "12px 0 0", lineHeight: 1.5 }}>
+                Demo build: simulated top-up, nothing is charged.
+              </p>
+              <div style={{ display: "flex", gap: 14, marginTop: 12, fontSize: 13.5 }}>
+                <Link href="/app/deposit" onClick={() => setOpen(false)}>Card flow</Link>
+                <Link href="/app/wallet" onClick={() => setOpen(false)}>Deposit with QR</Link>
+              </div>
+            </>
+          )}
           <button type="button" className="btn-quiet" style={{ padding: 0, marginTop: 8, fontSize: 12 }}
-            onClick={() => { setOpen(false); showToast("Balance stays on this device"); }}>
+            onClick={() => setOpen(false)}>
             close
           </button>
         </div>

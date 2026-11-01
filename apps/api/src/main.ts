@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { loadConfig } from './common/config';
+import { TENANT_HEADER } from './common/tenant';
 
 async function bootstrap() {
   const config = loadConfig();
@@ -36,7 +37,7 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', TENANT_HEADER],
     // Cache preflights so a chatty client is not re-asking on every quote.
     maxAge: 86_400,
   });

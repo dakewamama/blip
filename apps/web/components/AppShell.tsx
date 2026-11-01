@@ -8,6 +8,7 @@ import MemeTicker from "@/components/MemeTicker";
 import SupportChat from "@/components/SupportChat";
 import SearchBar from "@/components/SearchBar";
 import TopUpChip from "@/components/TopUpChip";
+import { useCustody } from "@/lib/custody";
 import { useBlip } from "@/lib/store";
 
 const NAV = [
@@ -22,7 +23,9 @@ const NAV = [
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { state, ready } = useBlip();
+  const { state, ready, reset } = useBlip();
+  const custody = useCustody();
+  const address = custody.account?.address;
   const router = useRouter();
   const pathname = usePathname();
 
@@ -70,9 +73,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </span>
           <div style={{ minWidth: 0 }}>
             <div className="truncate" style={{ fontSize: 14, fontWeight: 700 }}>{handle}</div>
-            <div className="mono" style={{ fontSize: 12, color: "var(--muted-4)" }}>paper wallet</div>
+            <div className="mono" style={{ fontSize: 12, color: "var(--muted-4)" }}>
+              {!custody.enabled ? "demo wallet" : address ? `${address.slice(0, 4)}\u2026${address.slice(-4)}` : "loading wallet"}
+            </div>
           </div>
         </Link>
+        <button type="button" className="btn-quiet" style={{ padding: "4px 8px", fontSize: 12.5, textAlign: "left" }}
+          onClick={() => { reset(); router.replace("/auth?mode=signin"); }}>
+          Sign out
+        </button>
       </aside>
 
       <main className="app-main">

@@ -1,0 +1,15 @@
+# Vercel builds the front ends from apps/web; it needs the workspace manifests
+# and lockfile, not local build output, dependencies or the API's runtime data.
+node_modules
+**/node_modules
+.next
+.next-*
+**/.next
+**/.next-*
+apps/api/dist
+apps/api/uploads
+apps/api/.funding-store
+**/.env
+**/.env.local
+**/*.tsbuildinfo
+.claude

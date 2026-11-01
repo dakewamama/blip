@@ -1,4 +1,5 @@
 import { api, ApiError } from "@/lib/api";
+import { brand } from "@/lib/brand";
 import BackendDown from "@/components/BackendDown";
 import TokenDetail from "./TokenDetail";
 
@@ -8,9 +9,9 @@ export async function generateMetadata({ params }: { params: Promise<{ mint: str
   const { mint } = await params;
   try {
     const { token } = await api.token(mint);
-    return { title: `blip \u2014 ${token.name} (${token.symbol})` };
+    return { title: `${token.name} (${token.symbol})` };
   } catch {
-    return { title: "blip" };
+    return { title: { absolute: brand.name } };
   }
 }
 

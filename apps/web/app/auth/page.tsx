@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import AuthFlow from "./AuthFlow";
 
-export const metadata = { title: "blip \u2014 create your account" };
+export const metadata = { title: "create your account" };
 
 export default function AuthPage() {
   return (
